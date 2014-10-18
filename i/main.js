@@ -417,7 +417,7 @@ $(document).ready(function() {
 		});
 
 		for (c in opts) {
-			console.log(opts[c].o+': '+opts[c].v);
+			//console.log(opts[c].o+': '+opts[c].v);
 		}
 
 		socket.emit('slStart', {slicer:defaultSlicer,opts:opts});
