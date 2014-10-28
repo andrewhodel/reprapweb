@@ -605,20 +605,11 @@ $(document).ready(function() {
 		alert('your browser is too old to upload files, get the latest Chromium or Firefox');
 	}
 
-	socket.on('posStatus', function(data) {
-			var pos = data.split(/[X,Y,Z,E," "]/);
-			$('#xPOS').html(pos[1]);
-			$('#yPOS').html(pos[2]);
-			$('#zPOS').html(pos[3]);
-			$('#ePOS').html(pos[4]);
-
-		}
-
-	);
-
-
 	// temperature
 	socket.on('tempStatus', function(data) {
+		if (data.indexOf('ok') == 0) {
+			// this is a normal temp status
+
 			var fs = data.split(/[TB]/);
 			var t = fs[1].split('/');
 			var b = fs[2].split('/');
@@ -627,21 +618,23 @@ $(document).ready(function() {
 			for (var i=0; i<2; i++) {
 				t[i] = t[i].trim();
 				b[i] = b[i].trim();
+			}
+			// t[0] = extruder temp, t[1] = extruder set temp
+			// b[0] = bed temp, b[1] = bed set temp
 			$('#eTC').html(t[0]+'C');
 			$('#eTS').html(t[1]+'C');
 			$('#bTC').html(b[0]+'C');
 			$('#bTS').html(b[1]+'C');
-			// Code here to plot the Flot graph
-			var prgse1 = ((t[0] / 250) * 100);
-			document.getElementById('pgse1').style.width= prgse1 +'%';
-			var prgse1 = ((b[0] / 120) * 100);
-			document.getElementById('pgsbed').style.width= prgse1 +'%';
 
-			//
+		} else {
+			// this is a waiting temp status
+			// get extruder temp
+			var eT = data.split('T');
+			eT = eT[1].split('E');
+			eT = eT[0].slice(1);
+			eT = eT.trim();
+			$('#eTC').html(eT+'C');
 		}
 	});
 
-
 });
-
-

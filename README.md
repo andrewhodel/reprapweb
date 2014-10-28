@@ -88,7 +88,3 @@ Pin-Priority: -10
 sudo apt-get update
 sudo apt-get install -t jessie gcc g++
 ```
-
-## CuraEngine and Slic3r
-
-RepRapWeb expects to find ../CuraEngine/build/CuraEngine and ../Slic3r/slic3r.pl (same directory as reprapweb).
