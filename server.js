@@ -208,9 +208,9 @@ io.sockets.on('connection', function (socket) {
 	socket.emit('ports', allPorts);
 
 	// send presets
-	fs.readFile('/home/pi/presets', function(err, cPresets) {
+	fs.readFile('presets', function(err, cPresets) {
 		if (err) {
-			console.log('problem reading /home/pi/presets, using none');
+			console.log('problem reading presets, using none');
 			cPresets = {slic3r:[],cura:[]};
 		} else {
 			cPresets = JSON.parse(cPresets);
@@ -223,9 +223,9 @@ io.sockets.on('connection', function (socket) {
 		// format:
 		// {slicerName:[{name:'preset_name',opts:[{o:'optName':v:'optValue'}]}],slicer2Name:[{name:'preset_name',opts:[{o:'optName':v:'optValue'}]}]}
 
-		fs.readFile('/home/pi/presets', function(err, cPresets) {
+		fs.readFile('presets', function(err, cPresets) {
 			if (err) {
-				console.log('problem reading /home/pi/presets, using none');
+				console.log('problem reading presets, using none');
 			} else {
 				cPresets = JSON.parse(cPresets);
 			}
@@ -238,10 +238,10 @@ io.sockets.on('connection', function (socket) {
 				}
 			}
 
-			fs.writeFile('/home/pi/presets', JSON.stringify(cPresets), function(err) {
+			fs.writeFile('presets', JSON.stringify(cPresets), function(err) {
 				if (err) {
 					// return error
-					socket.emit('serverError', 'error writing to /home/pi/presets');
+					socket.emit('serverError', 'error writing to presets');
 				} else {
 					socket.emit('presets', {exists:-1,presets:cPresets});
 				}
@@ -256,9 +256,9 @@ io.sockets.on('connection', function (socket) {
 		// format:
 		// {slicerName:[{name:'preset_name',opts:[{o:'optName':v:'optValue'}]}],slicer2Name:[{name:'preset_name',opts:[{o:'optName':v:'optValue'}]}]}
 
-		fs.readFile('/home/pi/presets', function(err, cPresets) {
+		fs.readFile('presets', function(err, cPresets) {
 			if (err) {
-				console.log('problem reading /home/pi/presets, using none');
+				console.log('problem reading presets, using none');
 				cPresets = {slic3r:[],cura:[]};
 			} else {
 				cPresets = JSON.parse(cPresets);
@@ -287,10 +287,10 @@ io.sockets.on('connection', function (socket) {
 				exists = -2;
 			}
 
-			fs.writeFile('/home/pi/presets', JSON.stringify(cPresets), function(err) {
+			fs.writeFile('presets', JSON.stringify(cPresets), function(err) {
 				if (err) {
 					// return error
-					socket.emit('serverError', 'error writing to /home/pi/presets');
+					socket.emit('serverError', 'error writing to presets');
 				} else {
 					socket.emit('presets', {exists:exists,presets:cPresets});
 				}
@@ -303,14 +303,14 @@ io.sockets.on('connection', function (socket) {
 	// stlUpload ArrayBuffer
 	socket.on('stlUpload', function (data) {
 
-		fs.open('/home/pi/workingStl.stl', 'w', function(err, fd) {
+		fs.open('workingStl.stl', 'w', function(err, fd) {
 			if (err) {
-				socket.emit('serverError', 'error opening file /home/pi/workingStl.stl');
+				socket.emit('serverError', 'error opening file workingStl.stl');
 			} else {
 				fs.write(fd, data, 0, data.length, null, function(err) {
 					fs.close(fd, function() {
 						if (err) {
-							socket.emit('serverError', 'error writing to /home/pi/workingStl.stl');
+							socket.emit('serverError', 'error writing to workingStl.stl');
 						} else {
 							socket.emit('stlUploadSuccess', true);
 						}
@@ -338,17 +338,17 @@ io.sockets.on('connection', function (socket) {
 
 		if (data.slicer == 'cura') {
 			opts.push('-o');
-			opts.push('/home/pi/workingStl.gcode');
+			opts.push('workingStl.gcode');
 		}
 
-		opts.push('/home/pi/workingStl.stl');
+		opts.push('workingStl.stl');
 
 		var spawn = require('child_process').spawn;
 
 		if (data.slicer == 'slic3r') {
 			var cmd = spawn('./runSl.sh', opts);
 		} else if (data.slicer == 'cura') {
-			var cmd = spawn('/home/pi/CuraEngine/build/CuraEngine', opts);
+			var cmd = spawn('../CuraEngine/build/CuraEngine', opts);
 		}
 
 		//console.log(data);
@@ -404,7 +404,7 @@ io.sockets.on('connection', function (socket) {
 		var gc = '';
 
 		// read workingStl.gcode
-		fs.readFile('/home/pi/workingStl.gcode', 'utf8', function(err, fileData) {
+		fs.readFile('workingStl.gcode', 'utf8', function(err, fileData) {
 			if (!err) {
 
 				if (typeof currentSocketPort[socket.id] != 'undefined') {
@@ -425,7 +425,7 @@ io.sockets.on('connection', function (socket) {
 				}
 
 			} else {
-				socket.emit('serverError', 'error reading file /home/pi/workingStl.gcode');
+				socket.emit('serverError', 'error reading file workingStl.gcode');
 			}
 		});
 
