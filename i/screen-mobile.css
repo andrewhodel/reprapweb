@@ -46,8 +46,8 @@
 }
 
 #renderArea {
-	width: 500px;
-	height: 500px;
+	width: 150px;
+	height: 150px;
 	border: 5px solid #eee;
 	background-color: #fff;
 	border-radius: 4px;
@@ -72,3 +72,5 @@
 	width: auto;
 	margin: 10px;
 }
+
+

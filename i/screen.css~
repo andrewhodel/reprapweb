@@ -54,13 +54,13 @@
 }
 
 #console {
-	height: 100px;
+	height: 200px;
 	width: auto;
 	overflow-y: auto;
 	text-align: left;
 	background-color: #ddd;
 	padding: 10px;
-	font-size: 8px;
+	font-size: 10px;
 }
 
 #console p {

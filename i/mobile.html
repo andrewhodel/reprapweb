@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="">
+<meta name="author" content="">
+
+<title>RepRapWeb - A fully featured Web UI for RepRap and other 3d printers</title>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="jquery.min.js"></script>
+<script src="bootstrap.min.js"></script>
+<script src="./main.js"></script>
+
+<!-- modified jsc3d to support loading STL from BinaryString -->
+<script src="jsc3d/jsc3d.js"></script>
+<script src="jsc3d/jsc3d.touch.js"></script>
+<script src="jsc3d/jsc3d.webgl.js"></script>
+
+<link rel="stylesheet" href="bootstrap.min.css" />
+<link rel="stylesheet" href="bootstrap-theme.min.css" />
+<link rel="stylesheet" href="screen-mobile.css" />
+
+
+</head>
+
+<body>
+
+<div class="tabbable">
+  <ul class="nav nav-pills">
+    <li class="active"><a href="#pane1" data-toggle="tab">Status</a></li>
+    <li><a href="#pane2" data-toggle="tab">Console</a></li>
+    <li><a href="#pane3" data-toggle="tab">Preview</a></li>
+  </ul>
+  <div class="tab-content">
+    <div id="pane1" class="tab-pane active">
+<table width="100%">
+<tr>
+<td> 
+	<b>Extruder:</b> (Set to: <span id="eTS" style="color: green;">--.-C</span>)
+	<div class="progress" style="width: 150px;">  <div class="progress-bar progress-bar-danger" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%;" id="pgse1"> 
+	<span id="eTC" style="color: white;">--.-C</span>    </div> </div>
+</td>
+<td>
+<div class="btn-group">
+<button type="button" id="g28" class="btn btn-primary btn-sm">Off</button>
+<button type="button" id="g28" class="btn btn-danger btn-sm">190</button>
+<button type="button" id="g28" class="btn btn-danger btn-sm">230</button>
+
+</div>
+
+</td>
+</tr>
+<tr>
+<td>
+	<b>Bed:</b> (Set to: <span id="bTS" style="color: green;">--.-</span>) 
+	<div class="progress" style="width: 150px;">  <div class="progress-bar progress-bar-danger" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%;" id="pgsbed">
+	<span id="bTC" style="color: white;">--.-C</span> </div> </div>
+</td>
+<td>
+<div class="btn-group">
+<button type="button" id="g28" class="btn btn-primary btn-sm">Off</button>
+<button type="button" id="g28" class="btn btn-danger btn-sm">65</button>
+<button type="button" id="g28" class="btn btn-danger btn-sm">110</button>
+
+</div>
+</td>
+</tr>
+</table>
+
+
+<div class="well well-sm"><center>X<span  id="xPOS" style="color: black; font-weight: bold;">:-.--</span>  Y<span id="yPOS" style="color: black; font-weight: bold;">:-.--</span>  Z<span id="zPOS" style="color: black; font-weight: bold;">:-.--</span>  E<span id="ePOS" style="color: black; font-weight: bold;">:-.--</span></center></div>
+
+
+
+    </div>
+    <div id="pane2" class="tab-pane">
+
+
+		<select id="choosePort" class="form-control">
+		<option val="no">Select a serial port</option>
+		</select>
+		<div id="console"></div>
+
+		<div class="input-group">
+		<input type="text" class="form-control" id="command">
+		<span class="input-group-btn">
+		<button id="sendCommand" class="btn btn-default" type="button">
+		Send
+		</button>
+		</span>
+		</div>
+
+
+    </div>
+    <div id="pane3" class="tab-pane">
+<table width="100%">
+<tr>
+<td> <canvas id="renderArea" width="200" height="200"></canvas> </td>
+<td><span style="margin-right: 10px;" class="btn btn-info btn-file btn-block">
+Open GCODE <input type="file" id="fileInputGcode" /></span><span class="btn btn-info btn-file btn-block"> Open STL <input type="file" id="fileInputStl" /></span>
+<button type="button" class="btn btn-warning disabled btn-block" id="sendToPrinter">Send to Printer</button></td>
+</tr>
+</table>
+
+<span>Model Dimensions: X:0 Y:0 Z:0</span>
+  </div><!-- /.tab-content -->
+</div><!-- /.tabbable -->
+
+</body>
+</html>
