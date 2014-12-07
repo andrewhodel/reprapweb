@@ -115,12 +115,6 @@ function serialData(data, port) {
 		return;
 	}
 
-	// handle the 2nd line for M105 ok 0 with repetier (strange response) firmware
-	if (sp[port].lastSerialReadLine.indexOf('ok T:') == 0 && data.indexOf('ok 0') == 0) {
-		// the temp was had in the previous ok T: response, so just disregard this
-		return;
-	}
-
 	if (queuePause == 1) {
 		// pause queue
 		return;
