@@ -111,6 +111,13 @@ function serialData(data, port) {
 	// handle M105
 	if (data.indexOf('ok T:') == 0 || data.indexOf('T:') == 0) {
 		emitToPortSockets(port, 'tempStatus', data);
+		sp[port].lastSerialReadLine = data;
+		return;
+	}
+
+	// handle the 2nd line for M105 ok 0 with repetier (strange response) firmware
+	if (sp[port].lastSerialReadLine.indexOf('ok T:') == 0 && data.indexOf('ok 0') == 0) {
+		// the temp was had in the previous ok T: response, so just disregard this
 		return;
 	}
 
@@ -120,7 +127,6 @@ function serialData(data, port) {
 	}
 
 	data = ConvChar(data);
-
 
 	if (data.indexOf('ok') == 0) {
 
