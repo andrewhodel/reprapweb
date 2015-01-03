@@ -111,6 +111,7 @@ function serialData(data, port) {
 	// handle M105
 	if (data.indexOf('ok T:') == 0 || data.indexOf('T:') == 0) {
 		emitToPortSockets(port, 'tempStatus', data);
+		sp[port].lastSerialReadLine = data;
 		return;
 	}
 
@@ -120,7 +121,6 @@ function serialData(data, port) {
 	}
 
 	data = ConvChar(data);
-
 
 	if (data.indexOf('ok') == 0) {
 
