@@ -39,7 +39,7 @@ $(document).ready(function() {
 	var viewer = new JSC3D.Viewer(canvas);
 	viewer.setParameter('InitRotationX', 0);
 	viewer.setParameter('InitRotationY', 0);
-	viewer.setParameter('InitRotationZ', 90);
+	viewer.setParameter('InitRotationZ', 0);
 	viewer.setParameter('ModelColor', '#228B22');
 	viewer.setParameter('BackgroundColor1', '#FFFFFF');
 	viewer.setParameter('BackgroundColor2', '#FFFFFF');
@@ -167,6 +167,7 @@ $(document).ready(function() {
 		if (data.status == 'success') {
 			$('#sendToPrinter').removeClass('disabled');
 			$('#mainStatus').html('Slicer Finished Processing, Ready to Print...');
+			$('#sliceModal').modal('toggle');
 			gCodeToSend = null;
 		} else {
 			$('#mainStatus').html('Error in STL->GCODE Process, retry...');
@@ -317,6 +318,8 @@ $(document).ready(function() {
 	socket.on('stlUploadSuccess', function (data) {
 		$('#mainStatus').html('Status: STL file uploaded, please set STL->GCODE options and process...');
 		$('#processStl').removeClass('disabled');
+		$('#sliceStl').removeClass('disabled');
+		$('#inputGcode').addClass('disabled');
 	});
 
 	$('#processStl').on('click', function() {
@@ -423,6 +426,7 @@ $(document).ready(function() {
 		socket.emit('slStart', {slicer:defaultSlicer,opts:opts});
 		$('#sendToPrinter').addClass('disabled');
 		$('#processStl').addClass('disabled');
+		$('#sliceStl').addClass('disabled');
 		$('#mainStatus').html('Status: Starting STL->GCODE Process');
 		$('#slActivity').show();
 		$('#processStl').html('Processing STL -> GCODE');
@@ -430,14 +434,12 @@ $(document).ready(function() {
 
 	$('#choosePort').on('change', function() {
 		// select port
-		socket.emit('usePort', $('#choosePort').val());
+		socket.emit('usePort', $('#choosePort').val());		
 	});
 
 	$('#sendCommand').on('click', function() {
-
 		socket.emit('gcodeLine', { line: $('#command').val() });
 		$('#command').val('');
-
 	});
 
 	// shift enter for send command
@@ -522,16 +524,50 @@ $(document).ready(function() {
 		}
 	});
 
+	$('#stop').on('click', function() {
+		if ($('#pause').html() == 'Pause') {
+			// pause queue on server
+			socket.emit('pause', 1);
+			$('#pause').html('Unpause');
+			$('#clearQ').removeClass('disabled');
+		} else {
+			socket.emit('pause', 0);
+			$('#pause').html('Pause');
+			$('#clearQ').addClass('disabled');
+		}
+		// if paused let user clear the command queue
+		socket.emit('clearQ', 1);
+		// must clear queue first, then unpause (click) because unpause does a sendFirstQ on server
+		$('#pause').click();
+		$('#inputGcode').removeClass('disabled');
+		$('#inputStl').removeClass('disabled');
+		$('#sendToPrinter').addClass('disabled');
+		$('#sliceStl').addClass('disabled');
+		$('#stop').addClass('disabled');
+		
+		
+	});
+
 	$('#clearQ').on('click', function() {
 		// if paused let user clear the command queue
 		socket.emit('clearQ', 1);
 		// must clear queue first, then unpause (click) because unpause does a sendFirstQ on server
 		$('#pause').click();
+		$('#sendToPrinter').removeClass('disabled');
+		$('#sliceStl').removeClass('disabled');
+		$('#inputGcode').removeClass('disabled');
+		$('#inputStl').removeClass('disabled');
+		
 	});
 
 	$('#sendToPrinter').on('click', function() {
 		$('#sendToPrinter').addClass('disabled');
+		$('#sliceStl').addClass('disabled');
+		$('#inputGcode').addClass('disabled');
+		$('#inputStl').addClass('disabled');
+		$('#stop').removeClass('disabled');
 		$('#mainStatus').html('Status: Printing');
+		
 		if (gCodeToSend) {
 			// !null
 			socket.emit('printGcode', { line: gCodeToSend });
@@ -542,7 +578,7 @@ $(document).ready(function() {
 	});
 
 	$('#extrudeMM').on('click', function() {
-		socket.emit('gcodeLine', { line: 'G91\nG1 F200 E'+$('#extrudeValue').val()+'\nG90' });
+		socket.emit('gcodeLine', { line: 'G91\nG1 F'+$('#extrudeSpeed').val()+' E'+$('#extrudeValue').val()+'\nG90' });
 	});
 
 	$('#extrudeTempSet').on('click', function() {
@@ -577,6 +613,8 @@ $(document).ready(function() {
 				$('#fileStatus').html('File Loaded: '+fileInputGcode.value+' as GCODE');
 				$('#mainStatus').html('Status: GCODE for '+fileInputGcode.value+' loaded and ready to print...');
 				$('#sendToPrinter').removeClass('disabled');
+				$('#sliceStl').addClass('disabled');
+				$('#inputStl').addClass('disabled');
 			};
 			reader.readAsText(fileInputGcode.files[0]);
 		});
@@ -605,9 +643,20 @@ $(document).ready(function() {
 		alert('your browser is too old to upload files, get the latest Chromium or Firefox');
 	}
 
+	socket.on('posStatus', function(data) {
+			var pos = data.split(/[X,Y,Z,E," ",:]/);
+			$('#xPOS').html(pos[2]);
+			$('#yPOS').html(pos[5]);
+			$('#zPOS').html(pos[8]);
+			$('#ePOS').html(pos[11]);
+
+		}
+
+	);
+	
 	// temperature
 	socket.on('tempStatus', function(data) {
-		if (data.indexOf('ok') == 0) {
+		if (data.indexOf('ok') == 0 || data.indexOf('T') == 0) {
 			// this is a normal temp status
 
 			var fs = data.split(/[TB]/);
@@ -621,11 +670,17 @@ $(document).ready(function() {
 			}
 			// t[0] = extruder temp, t[1] = extruder set temp
 			// b[0] = bed temp, b[1] = bed set temp
-			$('#eTC').html(t[0]+'C');
-			$('#eTS').html(t[1]+'C');
-			$('#bTC').html(b[0]+'C');
-			$('#bTS').html(b[1]+'C');
-
+			$('#eTC').html(t[0]+'°C');
+			$('#eTS').html(t[1]+'°C');
+			$('#bTC').html(b[0]+'°C');
+			$('#bTS').html(b[1]+'°C');
+			// Code here to plot the progress bars
+			var prgse1 = ((t[0] / 250) * 100);
+			document.getElementById('pgse1').style.width= prgse1 +'%';
+			var prgse1 = ((b[0] / 120) * 100);
+			document.getElementById('pgsbed').style.width= prgse1 +'%';
+						
+ 
 		} else {
 			// this is a waiting temp status
 			// get extruder temp
