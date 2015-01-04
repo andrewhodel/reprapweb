@@ -37,6 +37,21 @@ var url = require('url');
 var qs = require('querystring');
 var slBaseOpts = require('./slBaseOpts');
 
+// For STK500v1 Uploads
+var intel_hex = require('intel-hex');
+var Stk500 = require('./js-stk500v1');
+var firmware = fs.readFileSync('Blink.cpp.hex', { encoding: 'utf8' });
+var hex = intel_hex.parse(firmware).data;
+
+var board = {
+  name: "Arduino Uno",
+  baud: 115200,
+  signature: new Buffer([0x1e, 0x95, 0x0f]),
+  pageSize: 128,
+  timeout: 400
+};
+
+
 app.listen(config.webPort);
 var fileServer = new static.Server('./i');
 

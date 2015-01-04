@@ -5,5 +5,16 @@
   { "node-static" : "0.7.x"
   , "serialport" : "1.4.x"
   , "socket.io" : "1.0.x"
+  , "async": "^0.9.0"
+  , "buffer-equal": "0.0.1"
+  , "sinon": "^1.12.2"
+  },
+  "devDependencies": {
+    "event-stream": "^3.1.7",
+    "mocha": "^2.0.1",
+    "should": "^4.4.1",
+    "intel-hex": "^0.1.1",
+    "serialport": "^1.4.0"
   }
 }
+
