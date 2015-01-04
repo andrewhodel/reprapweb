@@ -73,6 +73,12 @@ $(document).ready(function() {
 		viewer.update();
 	});
 
+	$('#upload').on('click', function() {
+		$('#mainStatus').html('Entering Firmware Upload Mode');
+		socket.emit('upLoad'); //socket.emit('slStart', {slicer:defaultSlicer,opts:opts});
+	});
+
+
 	socket.on('serverError', function (data) {
 		alert(data);
 	});

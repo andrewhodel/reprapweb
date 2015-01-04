@@ -253,6 +253,29 @@ io.sockets.on('connection', function (socket) {
 		socket.emit('presets', {exists:-1,presets:cPresets});
 	});
 
+	// Firmware Upload function:  Should ideally take variables from modal form in index.html
+	socket.on('upLoad', function() {
+	console.log('Uploading here');
+	var serialPort = new SerialPort.SerialPort('COM5', {
+    baudrate: board.baud,
+  });
+
+  serialPort.on('open', function(){
+
+    Stk500.bootload(serialPort, hex, board, function(error){
+
+      serialPort.close(function (error) {
+        console.log(error);
+	  });
+
+      done(error);
+    });
+
+  });
+
+	});
+	
+	
 	socket.on('deletePreset', function(data) {
 		// delete preset
 		// format:
@@ -544,5 +567,6 @@ io.sockets.on('connection', function (socket) {
 		}
 		
 	});
+
 
 });

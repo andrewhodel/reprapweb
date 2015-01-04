@@ -39,6 +39,7 @@
 </div>
 <div class="navbar-collapse collapse">
 <ul class="nav navbar-nav navbar-right">
+<button type="button" class="btn btn-danger navbar-btn"  data-toggle="modal" data-target="#firmwareModal">Firmware Upload</button>
 </ul>
 </div>
 </div>
@@ -181,7 +182,7 @@
 
 
 	
-	
+	<!-- Modal for the Slicer -->
 
 <div class="modal fade" id="sliceModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
   <div class="modal-dialog">
@@ -247,6 +248,25 @@
   </div>
 </div>
 
+<!-- Modal for the Firmware Uploader -->
+<div class="modal fade" id="firmwareModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myModalLabel">Firmware Uploader</h4>
+      </div>
+      <div class="modal-body">
+        
+      </div>
+      <div class="modal-footer">
+        <!--button type="button" class="btn btn-default" data-dismiss="modal">Close</button // Commented out - using $('#sliceModal').modal('toggle'); in main.js to close once sliced-->
+        <button type="button" class="btn btn-danger navbar-btn" id="upload">Firmware Upload</button>
+
+      </div>
+    </div>
+  </div>
+</div>
 
 
 
