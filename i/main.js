@@ -75,7 +75,11 @@ $(document).ready(function() {
 
 	$('#upload').on('click', function() {
 		$('#mainStatus').html('Entering Firmware Upload Mode');
-		socket.emit('upLoad'); //socket.emit('slStart', {slicer:defaultSlicer,opts:opts});
+		socket.emit('upLoadFirmware'); // To do expand to pass along board, baud and hex
+		// Example from higher up that pushes in form values... as inspiration // $('#extrudeMM').on('click', function() {
+		//socket.emit('gcodeLine', { line: 'G91\nG1 F'+$('#extrudeSpeed').val()+' E'+$('#extrudeValue').val()+'\nG90' });
+	});
+
 	});
 
 

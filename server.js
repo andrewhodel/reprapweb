@@ -40,17 +40,6 @@ var slBaseOpts = require('./slBaseOpts');
 // For STK500v1 Uploads
 var intel_hex = require('intel-hex');
 var Stk500 = require('./js-stk500v1');
-var firmware = fs.readFileSync('Blink.cpp.hex', { encoding: 'utf8' });
-var hex = intel_hex.parse(firmware).data;
-
-var board = {
-  name: "Arduino Uno",
-  baud: 115200,
-  signature: new Buffer([0x1e, 0x95, 0x0f]),
-  pageSize: 128,
-  timeout: 400
-};
-
 
 app.listen(config.webPort);
 var fileServer = new static.Server('./i');
@@ -253,29 +242,43 @@ io.sockets.on('connection', function (socket) {
 		socket.emit('presets', {exists:-1,presets:cPresets});
 	});
 
-	// Firmware Upload function:  Should ideally take variables from modal form in index.html
-	socket.on('upLoad', function() {
-	console.log('Uploading here');
-	var serialPort = new SerialPort.SerialPort('COM5', {
-    baudrate: board.baud,
-  });
+	// Development Stub: In progress
+	// Firmware Upload function:  Should ideally take variables from modal form in index
+	socket.on('upLoadFirmware', function() {
+	console.log('Uploading firmware');
+	
+	var firmware = fs.readFileSync('Blink.cpp.hex', { encoding: 'utf8' }); // Replace with upload and select 
+	var hex = intel_hex.parse(firmware).data;
 
-  serialPort.on('open', function(){
+	// NB this is to be replaced with values from form and lookup table for signature from part names
+	var board = {
+	name: "Arduino Uno",
+	baud: 115200,
+	signature: new Buffer([0x1e, 0x95, 0x0f]),
+	pageSize: 128,
+	timeout: 400
+	};
+	
+	// Copied from examples script of stk500v1 package but havent done work on making this work inside reprapwebyet
+//	var serialPort = new SerialPort.SerialPort('COM5', {
+//    baudrate: board.baud,
+//  });
 
-    Stk500.bootload(serialPort, hex, board, function(error){
+//  serialPort.on('open', function(){
 
-      serialPort.close(function (error) {
-        console.log(error);
-	  });
+//    Stk500.bootload(serialPort, hex, board, function(error){
 
-      done(error);
-    });
+//      serialPort.close(function (error) {
+//        console.log(error);
+//	  });
 
-  });
+//     done(error);
+//    });
+
+//  });
 
 	});
-	
-	
+		
 	socket.on('deletePreset', function(data) {
 		// delete preset
 		// format:
