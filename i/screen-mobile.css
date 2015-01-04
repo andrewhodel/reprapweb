@@ -1,0 +1,81 @@
+#slOpts {
+	width: auto;
+	height: 350px;
+	overflow-y: auto;
+}
+
+#slOpts h5 {
+	display: block;
+	color: #333;
+	width: auto;
+	background-color: #ff8;
+	padding: 4px;
+	margin: 4px;
+	border-radius: 6px;
+}
+
+#slOpts p {
+	font-size: 10px;
+}
+
+.btn-file {
+	position: relative;
+	overflow: hidden;
+}
+
+.btn-file input[type=file] {
+	position: absolute;
+	top: 0;
+	right: 0;
+	min-width: 100%;
+	min-height: 100%;
+	font-size: 100px;
+	text-align: right;
+	filter: alpha(opacity=0);
+	opacity: 0;
+	outline: none;
+	background: white;
+	cursor: inherit;
+	display: block;
+}
+
+.xyzButton {
+	height: 40px;
+	width: 40px;
+	padding: 0px;
+}
+
+#renderArea {
+	width: 400px;
+	height: 400px;
+	border: 5px solid #eee;
+	background-color: #fff;
+	border-radius: 4px;
+}
+
+#console {
+	height: 100px;
+	width: auto;
+	overflow-y: auto;
+	text-align: left;
+	background-color: #ddd;
+	padding: 10px;
+	font-size: 8px;
+}
+
+#console p {
+	margin-top: 0px;
+	margin-bottom: 0px;
+}
+
+#mainStatus {
+	width: auto;
+	margin: 10px;
+}
+
+.progress {background: rgba(153, 153, 153, 1); border: 0px solid rgba(245, 245, 245, 1); border-radius: 4px; height: 20px;}
+.progress-bar-custom {background: rgba(66, 139, 202, 1);}
+.well-custom{background: rgba(153, 153, 153, 0.5);}
+
+#col3{
+max-width:400px !important;}

@@ -72,3 +72,6 @@
 	width: auto;
 	margin: 10px;
 }
+
+.progress {background: rgba(153, 153, 153, 1); border: 0px solid rgba(245, 245, 245, 1); border-radius: 4px; height: 20px;}
+.progress-bar-custom {background: rgba(66, 139, 202, 1);}

@@ -1,0 +1,32 @@
+{
+  "name": "stk500",
+  "version": "1.0.3",
+  "description": "Fully javascript stk500v1 programmer. Allows you to program Arduinos straight from node (or browser for that matter). No more avrdude system calls or using the arduino IDE.",
+  "main": "index.js",
+  "directories": {
+    "example": "examples"
+  },
+  "scripts": {
+    "test": "mocha --include test/*.js test/*.js --reporter spec"
+  },
+  "repository": "https://github.com/jacobrosenthal/js-stk500v1",
+  "keywords": [
+    "arduino",
+    "stk500",
+    "avrdude"
+  ],
+  "author": "Jacob Rosenthal",
+  "license": "MIT",
+  "dependencies": {
+    "async": "^0.9.0",
+    "buffer-equal": "0.0.1",
+    "sinon": "^1.12.2"
+  },
+  "devDependencies": {
+    "event-stream": "^3.1.7",
+    "mocha": "^2.0.1",
+    "should": "^4.4.1",
+    "intel-hex": "^0.1.1",
+    "serialport": "^1.4.0"
+  }
+}

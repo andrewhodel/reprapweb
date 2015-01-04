@@ -37,6 +37,10 @@ var url = require('url');
 var qs = require('querystring');
 var slBaseOpts = require('./slBaseOpts');
 
+// For STK500v1 Uploads
+var intel_hex = require('intel-hex');
+var Stk500 = require('./js-stk500v1');
+
 app.listen(config.webPort);
 var fileServer = new static.Server('./i');
 
@@ -84,12 +88,21 @@ serialport.list(function (err, ports) {
 			// line from serial port
 			sp[i].handle.on("data", function (data) {
 				serialData(data, i);
+			//	console.log(data); // Added this to log 'data' to console
 			});
 
 			// loop for temp every 5 seconds
+	 			setInterval(function() {
+				if (sp[i].q.length < 1 || queuePause == 1) {
+					sp[i].handle.write("M105\n");
+				} else {
+					sp[i].q.unshift("M105\n");
+					sp[i].q.length++;
+				}
+ 			}, 5000);
 			setInterval(function() {
-				sp[i].handle.write("M105\n");
-			}, 5000);
+				sp[i].handle.write("M114\n");
+			}, 2000);
 
 		});
 
@@ -109,11 +122,22 @@ function serialData(data, port) {
 	//console.log('got newline from serial: '+data);
 
 	// handle M105
-	if (data.indexOf('ok T:') == 0 || data.indexOf('T:') == 0) {
-		emitToPortSockets(port, 'tempStatus', data);
-		sp[port].lastSerialReadLine = data;
+ 	if (data.indexOf('ok T:') == 0 || data.indexOf('T:') == 0) {
+ 		emitToPortSockets(port, 'tempStatus', data);
+		if (data.indexOf('T:') == 0)
+			return;
+ 	}
+ 
+ 
+	
+	if (data.indexOf('X:') == 0) {
+		emitToPortSockets(port, 'posStatus', data);
+		//console.log('got POS from serial: '+data);
+
 		return;
 	}
+
+
 
 	if (queuePause == 1) {
 		// pause queue
@@ -218,6 +242,43 @@ io.sockets.on('connection', function (socket) {
 		socket.emit('presets', {exists:-1,presets:cPresets});
 	});
 
+	// Development Stub: In progress
+	// Firmware Upload function:  Should ideally take variables from modal form in index
+	socket.on('upLoadFirmware', function() {
+	console.log('Uploading firmware');
+	
+	var firmware = fs.readFileSync('Blink.cpp.hex', { encoding: 'utf8' }); // Replace with upload and select 
+	var hex = intel_hex.parse(firmware).data;
+
+	// NB this is to be replaced with values from form and lookup table for signature from part names
+	var board = {
+	name: "Arduino Uno",
+	baud: 115200,
+	signature: new Buffer([0x1e, 0x95, 0x0f]),
+	pageSize: 128,
+	timeout: 400
+	};
+	
+	// Copied from examples script of stk500v1 package but havent done work on making this work inside reprapwebyet
+//	var serialPort = new SerialPort.SerialPort('COM5', {
+//    baudrate: board.baud,
+//  });
+
+//  serialPort.on('open', function(){
+
+//    Stk500.bootload(serialPort, hex, board, function(error){
+
+//      serialPort.close(function (error) {
+//        console.log(error);
+//	  });
+
+//     done(error);
+//    });
+
+//  });
+
+	});
+		
 	socket.on('deletePreset', function(data) {
 		// delete preset
 		// format:
@@ -348,7 +409,7 @@ io.sockets.on('connection', function (socket) {
 		if (data.slicer == 'slic3r') {
 			var cmd = spawn('./runSl.sh', opts);
 		} else if (data.slicer == 'cura') {
-			var cmd = spawn('../CuraEngine/build/CuraEngine', opts);
+			var cmd = spawn('../CuraEngine/CuraEngine.exe', opts);
 		}
 
 		//console.log(data);
@@ -509,5 +570,6 @@ io.sockets.on('connection', function (socket) {
 		}
 		
 	});
+
 
 });
