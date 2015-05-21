@@ -20,12 +20,7 @@ If you would like to include this code in a project which is not licensed under 
 
 ## Raspberry Pi prebuilt Image
 
-There is a prebuilt Rasbian image with GRBLWeb already running on it at port 80.  More information and a link to the .img can be found at http://xyzbots.com
-
-The ethernet interface will get a DHCP address that you can ssh to.
-
-username: pi
-password: raspbian
+There is a prebuilt Rasbperry Pi Image with everything configured.  More information and a link to the .img can be found at http://xyzbots.com
 
 ## Serial baud rate
 
@@ -61,33 +56,6 @@ forever start server.js
 The default port in config.js is 8000, you can change it by editing the file.
 
 http://hostaddress:8000/
-
-## build CuraEngine on rPi raspbian wheezy
-
-```
-echo "deb http://mirrordirector.raspbian.org/raspbian/ jessie main contrib non-free rpi" >> /etc/apt/sources.list
-```
-
-Add this to /etc/apt/preferences
-
-```
-Package: *
-Pin: release n=wheezy
-Pin-Priority: 900
-
-Package: *
-Pin: release n=jessie
-Pin-Priority: 300
-
-Package: *
-Pin: release o=Raspbian
-Pin-Priority: -10
-```
-
-```
-sudo apt-get update
-sudo apt-get install -t jessie gcc g++
-```
 
 ## CuraEngine and Slic3r
 
