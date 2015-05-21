@@ -5,4 +5,4 @@ while [ "$1" != "" ]; do
   shift;
 done
 
-/usr/bin/perl /home/pi/Slic3r/slic3r.pl $argstring;
+/root/localperl/bin/perl /root/Slic3r/slic3r.pl $argstring;

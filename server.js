@@ -36,6 +36,7 @@ var EventEmitter = require('events').EventEmitter;
 var url = require('url');
 var qs = require('querystring');
 var slBaseOpts = require('./slBaseOpts');
+var util = require('util');
 
 app.listen(config.webPort);
 var fileServer = new static.Server('./i');
@@ -201,7 +202,8 @@ io.sockets.on('connection', function (socket) {
 
 	socket.on('firstLoad', function(data) {
 		// emit slic3r saved options to ui
-		socket.emit('slOpts', slBaseOpts);
+		socket.emit('slOpts', slBaseOpts.rrwBaseOpts);
+		socket.emit('config', config);
 	});
 
 	// emit all ports to ui
@@ -322,26 +324,117 @@ io.sockets.on('connection', function (socket) {
 	});
 
 	socket.on('slStart', function (data) {
-		// slicer options
-		// make options string
-		var opts = [];
-		for (c in data.opts) {
-			//console.log(data.opts[c].o, data.opts[c].v);
-			if (data.slicer == 'slic3r' && data.opts[c].v != '') {
-				opts.push(data.opts[c].o);
-				opts.push(data.opts[c].v);
-			} else if (data.slicer == 'cura') {
-				opts.push('-s');
-				opts.push(data.opts[c].o+'='+data.opts[c].v);
-			}
-		}
 
-		if (data.slicer == 'cura') {
+		// setup slicer options
+		var opts = [];
+
+		if (data.slicer == 'slic3r') {
+			for (c in data.opts) {
+				//console.log(data.opts[c].o, data.opts[c].v);
+				if (data.slicer == 'slic3r' && data.opts[c].v != '') {
+
+					// Slic3r can set the options on the command line
+					opts.push(data.opts[c].o);
+					opts.push(data.opts[c].v);
+
+				}
+			}
+
+		} else if (data.slicer == 'cura') {
+
+			// setup command line options
 			opts.push('-o');
 			opts.push('workingStl.gcode');
+			opts.push('-j');
+			opts.push('currentCuraConfig.json');
+
+			// CuraEngine has to use an external file
+
+			// we need to sync write to currentCuraConfig.json (sampled from fdmprinter.json which is stored in slBaseOpts.fdmprinter)
+			// then pass that as config to CuraEngine
+			// we are just updating the default fdmprinter.json with the values from the web ui using the reverse of the process that
+			// selects those options for the web ui in slBaseOpts.js
+
+			// first create the json object for the file we will write
+			// we are just copying the base options from fdmprinter.json
+			var curaFdm = JSON.parse(JSON.stringify(slBaseOpts.fdmprinter));
+
+			// this could be simple if there was a standard agreed upon format for options for each slicer
+			// however that would never happen.  we could also just use Cura's standard json format as ours
+			// but that would just result in having to parse things for other slicers.  what would make the most
+			// sense would be for a command line based slicer to use command line based options as it was before this most
+			// recent update to cura.  it seems it would be really simple to just have --optionCategory-optionName value
+			// included in cura by just a loop like this allowing for command line options
+
+			for (var da=0; da<data.opts.length; da++) {
+				// this is a loop for each option sent by the interface
+
+				// if it's string value is true or false, set it to boolean
+				// no strings have a defined value of true or false if they are not boolean in cura
+				if (data.opts[da].v == 'false') {
+					data.opts[da].v = false;
+				} else if (data.opts[da].v == 'true') {
+					data.opts[da].v = true;
+				}
+
+				// first loop through each of machine_settings to find a match
+				for (var daa in curaFdm.machine_settings) {
+					if (daa == data.opts[da].o) {
+						// match, update curaFdm
+						curaFdm.machine_settings[daa]['default'] = data.opts[da].v;
+					}
+				}
+
+				// next loop through each of categories to find a match
+				for (var key in curaFdm.categories) {
+					// and inside each category, loop through the settings
+					//console.log('going through category '+key);
+					for (var k in curaFdm.categories[key].settings) {
+						if (k == data.opts[da].o) {
+							// match
+							//console.log('setting '+key+'.'+k);
+							curaFdm.categories[key].settings[k]['default'] = data.opts[da].v;
+						}
+					}
+				}
+				//console.log('### finished loop for option '+data.opts[da].o+"\n");
+			}
+
+			// this is super strange, but some options don't do anything with cura
+			// specifically the core defaults such as temperature
+
+			// material_print_temperature and bed_temperature can be set to whatever, but cura still doesn't
+			// put it at the start of the gcode file to warm up the printer
+			// this makes no sense because you are setting these options, so why not use them?
+			// we need to prepend this to machine_start_gcode
+			curaFdm.machine_settings.machine_start_gcode['default'] = curaFdm.machine_settings.machine_start_gcode['default'] +"\r\nM109 S"+curaFdm.categories['material'].settings.material_print_temperature['default']+"\r\n";
+
+			if (curaFdm.machine_settings.machine_heated_bed['default'] == true) {
+				curaFdm.machine_settings.machine_start_gcode['default'] = curaFdm.machine_settings.machine_start_gcode['default'] +"\r\nM190 S"+curaFdm.categories['material'].settings.material_bed_temperature['default']+"\r\n";
+			}
+
+			// EVEN WORSE, ON TOP OF NOT PUTTING THE SETTINGS INTO THE START AND END OF THE GCODE
+			// CURA DOESN'T EVEN PUT THOSE FIELDS IN THE FILE
+			// SO YOU HAVE TO THEN REOPEN THE FILE AFTER CURA HAS WRITTEN IT
+			// AND PUT THE CORRECT START AND END VALUES THAT YOU ACTUALLY SET IN THE CURA CONFIG!!
+			// GOOD THING FOR JAVASCRIPT BIND TO PASS EXTERNALLY SCOPED VARIABLES
+
+			//console.log(util.inspect(curaFdm, false, null));
+
+			// now sync write the updated options to a json file for CuraEngine to read
+			fs.writeFileSync('./currentCuraConfig.json', JSON.stringify(curaFdm));
+
 		}
 
+		// add input file, currently the same for both slicers as last option
 		opts.push('workingStl.stl');
+
+		var ls = '';
+		for (var i=0; i<opts.length; i++) {
+			ls += ' '+opts[i];
+		}
+
+		//console.log(data.slicer + ' ' + ls);
 
 		var spawn = require('child_process').spawn;
 
@@ -351,18 +444,15 @@ io.sockets.on('connection', function (socket) {
 			var cmd = spawn('../CuraEngine/build/CuraEngine', opts);
 		}
 
-		//console.log(data);
-		//console.log(opts);
-
 		cmd.stdout.on('data', function (data) {
 			socket.emit('slStatus', 'Slicer status: '+data);
 			socket.emit('serialRead', {'line':'<span style="color: green;">Slicer: '+data+'</span>'});
-			console.log('stdout: ' + data);
+			console.log('Slicer stdout: ' + data);
 		});
 
 		cmd.stderr.on('data', function (data) {
 			socket.emit('serialRead', {'line':'<span style="color: #888;">Slicer Error: '+data+'</span>'});
-			console.log('Slic3r stderr: ' + data);
+			console.log('Slicer stderr: ' + data);
 		});
 
 		cmd.on('close', function (code) {
@@ -370,12 +460,23 @@ io.sockets.on('connection', function (socket) {
 			// emit file
 			if (code == 0) {
 				// success
+
+				// explained right under this, and earlier in the code
+				if (this[1] == 'cura') {
+					var srsly = fs.readFileSync('./workingStl.gcode');
+
+					srsly = curaFdm.machine_settings.machine_start_gcode['default'] + srsly + curaFdm.machine_settings.machine_end_gcode['default'];
+
+					fs.writeFileSync('./workingStl.gcode',srsly);
+				}
 				socket.emit('slDone', {'status':'success'});
 
 			} else {
-				socket.emit('slDone', {'status':'Slic3r error'});
+				socket.emit('slDone', {'status':'error'});
 			}
-		});
+		// here we have to bind curaFdm and the slicer being used so we can update the file with
+		// the proper start and end gcode because curaengine doesn't use what you set in the settings file
+		}.bind([curaFdm,data.slicer]));
 
 	});
 
