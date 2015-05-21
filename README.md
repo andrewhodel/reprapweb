@@ -4,7 +4,7 @@ RepRapWeb is a fully function 3d Printer Controller which runs over http.  Multi
 
 More information can be found at http://xyzbots.com
 
-Copyright 2014 Andrew Hodel andrewhodel@gmail.com under the GNU AFFERO GENERAL PUBLIC LICENSE Version 3
+Copyright 2015 Andrew Hodel andrewhodel@gmail.com under the GNU AFFERO GENERAL PUBLIC LICENSE Version 3
 
 THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
 WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
