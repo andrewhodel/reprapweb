@@ -164,9 +164,9 @@ $(document).ready(function() {
 
 		if (data.showWebCam == true) {
 			// show the webcam and link
+			var webroot = window.location.protocol+'//'+window.location.host;
 
-			var webroot = window.location.origin.slice(0,-5);
-			//console.log(webroot);
+			console.log(webroot);
 
 			$('#wcImg').attr('src', webroot+':'+data.webcamPort+'/?action=stream');
 
