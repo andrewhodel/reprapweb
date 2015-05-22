@@ -4,7 +4,7 @@ G1 Z15.0 F6000 ;move the platform down 15mm
 G92 E0
 G1 F200 E3
 G92 E0
-M109 S220
+M109 S200
 ;Generated with Cura_SteamEngine DEV
 ;LAYER:0
 M107
@@ -17730,13 +17730,6 @@ G1 F3000 X9.259 Y8.842 E8915.49496
 G10
 M107
 G0 F9000 X9.259 Y8.842 Z45.000
-M104 S0
-M140 S0
-;Retract the filament
-G92 E1
-G1 E-1 F300
-G28 X0 Y0
-M84
 M104 S0
 M140 S0
 ;Retract the filament

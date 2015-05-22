@@ -418,24 +418,25 @@ io.sockets.on('connection', function (socket) {
 				//console.log('### finished loop for option '+data.opts[da].o+"\n");
 			}
 
-			// this is super strange, but some options don't do anything with cura
-			// specifically the core defaults such as temperature
+			// this is super strange, but some options don't do anything with cura current
+			// specifically the core defaults such as temperature and machine_start_gcode unless you have
+			// machine_gcode_flavor set to something such as RepRap instead of UltiGCode
+			// https://github.com/Ultimaker/CuraEngine/blob/d44c68a28b5c260ec342bd419ed6164fea8882cf/src/FffGcodeWriter.cpp#L139
+
+			// even if you set machine_gcode_flavor to something other than UltiGCode it still
+			// does not set the print temperature, but it does set the machine_start_gcode
+
+			// we are just going to leave fdmprinter.json settings as default and write the file ourselves
+			// with the start_gcode and bed/extruder warmups
 
 			// material_print_temperature and bed_temperature can be set to whatever, but cura still doesn't
 			// put it at the start of the gcode file to warm up the printer
-			// this makes no sense because you are setting these options, so why not use them?
 			// we need to prepend this to machine_start_gcode
 			curaFdm.machine_settings.machine_start_gcode['default'] = curaFdm.machine_settings.machine_start_gcode['default'] +"\r\nM109 S"+curaFdm.categories['material'].settings.material_print_temperature['default']+"\r\n";
 
 			if (curaFdm.machine_settings.machine_heated_bed['default'] == true) {
 				curaFdm.machine_settings.machine_start_gcode['default'] = curaFdm.machine_settings.machine_start_gcode['default'] +"\r\nM190 S"+curaFdm.categories['material'].settings.material_bed_temperature['default']+"\r\n";
 			}
-
-			// EVEN WORSE, ON TOP OF NOT PUTTING THE SETTINGS INTO THE START AND END OF THE GCODE
-			// CURA DOESN'T EVEN PUT THOSE FIELDS IN THE FILE
-			// SO YOU HAVE TO THEN REOPEN THE FILE AFTER CURA HAS WRITTEN IT
-			// AND PUT THE CORRECT START AND END VALUES THAT YOU ACTUALLY SET IN THE CURA CONFIG!!
-			// GOOD THING FOR JAVASCRIPT BIND TO PASS EXTERNALLY SCOPED VARIABLES
 
 			//console.log(util.inspect(curaFdm, false, null));
 
@@ -481,11 +482,11 @@ io.sockets.on('connection', function (socket) {
 
 				// explained right under this, and earlier in the code
 				if (this[1] == 'cura') {
-					var srsly = fs.readFileSync('./workingStl.gcode');
+					var cefix = fs.readFileSync('./workingStl.gcode');
 
-					srsly = curaFdm.machine_settings.machine_start_gcode['default'] + srsly + curaFdm.machine_settings.machine_end_gcode['default'];
+					cefix = curaFdm.machine_settings.machine_start_gcode['default'] + cefix;
 
-					fs.writeFileSync('./workingStl.gcode',srsly);
+					fs.writeFileSync('./workingStl.gcode',cefix);
 				}
 				socket.emit('slDone', {'status':'success'});
 
