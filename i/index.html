@@ -178,7 +178,14 @@ Upload STL <input type="file" id="fileInputStl" />
 <br style="clear: both;" />
 
 <button type="button" class="btn btn-warning disabled" style="float: right; margin: 10px;" id="sendToPrinter">Send to Printer</button>
-<span id="mainStatus">Status: Waiting for STL or GCODE upload...</span>
+
+<span style="float: left; font-weight: bold; border: 2px solid orange; padding: 4px;" id="mainStatus">Status: Waiting for STL or GCODE upload...</span>
+
+<div style="display: none; margin-top: 10px; width: 330px; height: 250px; float: left; clear: both;" id="webcam">
+<img id="wcImg" width="320" height="240" />
+<br />
+<a id="wcLink" target="_blank" href="#">Webcam</a>
+</div>
 
 <!-- END CENTER COLUMN -->
 
@@ -286,12 +293,6 @@ Send
 </button>
 </span>
 </div><!-- /input-group -->
-
-<div style="display: none; text-align: right; margin-top: 10px;" id="webcam">
-<img id="wcImg" width="320" height="240" />
-<br />
-<a id="wcLink" target="_blank" href="#">Webcam</a>
-</div>
 
 <!-- END RIGHT COLUMN -->
 
