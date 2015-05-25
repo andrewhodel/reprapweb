@@ -1,12 +1,8 @@
-var fs = require('fs');
-
-var slBaseOpts = {};
-
 // base slicer options
-slBaseOpts.rrwBaseOpts = {'slic3r':[
+var slBaseOpts = {'slic3r':[
 {section:'Printer Options', options: [
-{opt:'--nozzle-diameter',name:'Diameter of nozzle in mm (default: 0.5) (MUST BE 0.N)',value:'0.5'},
-{opt:'--print-center',name:'Coordinates in mm of the point to center the print around (default: 100,100)',value:'100.0,100.0'},
+{opt:'--nozzle-diameter',name:'Diameter of nozzle in mm (default: 0.5)',value:'.5'},
+{opt:'--print-center',name:'Coordinates in mm of the point to center the print around (default: 100,100)',value:'100,100'},
 {opt:'--z-offset',name:'Additional height in mm to add to vertical coordinates, positive is above the bed surface (+/-, default: 0)',value:'0'},
 {opt:'--gcode-flavor',name:'The type of G-code to generate (reprap/teacup/makerware/sailfish/mach3/no-extrusion, default: reprap)',value:['reprap','teacup','makerware','sailfish','mach3','no-extrusion']},
 {opt:'--use-relative-e-distances',name:'Enable this to get relative E values (default: no)',value:['no','yes']},
@@ -46,7 +42,7 @@ slBaseOpts.rrwBaseOpts = {'slic3r':[
 {opt:'--default-acceleration',name:'Acceleration will be reset to this value after the specific settings above have been applied. (mm/s^2, set zero to disable; default: 0)',value:'0'},
 ]},
 {section:'Accuracy Options', options: [
-{opt:'--layer-height',name:'Layer height in mm (default: 0.3) (MUST BE 0.N)',value:'0.3'},
+{opt:'--layer-height',name:'Layer height in mm (default: 0.3)',value:'.3'},
 {opt:'--first-layer-height',name:'Layer height for first layer (mm or %, default: 0.35)',value:'.35'},
 {opt:'--infill-every-layers',name:'Infill every N layers (default: 1)',value:'1'},
 {opt:'--solid-infill-every-layers',name:'Force a solid layer every N layers (default: 0)',value:'0'},
@@ -155,89 +151,109 @@ slBaseOpts.rrwBaseOpts = {'slic3r':[
 {opt:'--standby-temperature-delta',name:'Temperature difference to be applied when an extruder is not active and ooze-prevention is enabled (default: -5)',value:'-5'},
 ]}
 
-]};
+],'cura':[
+// https://github.com/daid/Cura/blob/SteamEngine/Cura/util/profile.py#L1039 <-- this makes it harder than it has to be to use CuraEngine
+// https://github.com/daid/Cura/blob/SteamEngine/Cura/util/sliceEngine.py#L446
+// https://github.com/Ultimaker/CuraEngine/blob/master/src/settings.cpp
 
-// here we get cura base options from the fdmprinter.json file that comes with CuraEngine
-fs.readFile('fdmprinter.json', function(err, d) {
-	if (err) {
-		console.log('problem reading fdmprinter.json');
-	} else {
-		var cfdm = JSON.parse(d);
+/*
+python code to export print options from Cura
+add to Cura/util/sliceEngine.py #570 before return settings
+this will print the exact options Cura is sending to CuraEngine from the console
+for the settings you have selected in the UI
+===
+                # print settings
+                print str(len(settings))
+                for item in settings.iterkeys():
+                        if (item != 'endCode' and item != 'postSwitchExtruderCode' and item != 'preSwitchExtruderCode' and item != 'startCode'):
+                                print "{opt:':"+str(item)+"',name:'"+str(item)+"',value:'"+str(settings[item])+"'},"
+                print "###### startCode ######"
+                print str(settings['startCode'])
+                print "###### endCode ######"
+                print str(settings['endCode'])
+===
+useful to figure out how Cura is sending options to CuraEngine
+*/
 
-		// add fdmprinter.json to slBaseOpts
-		slBaseOpts.fdmprinter = cfdm;
+{section:'Quality', options: [
+{opt:'layerThickness',name:'Layer Height (mm) - Layers thicker than 80% of your nozzle size usually give bad results',value:'.4'},
+{opt:'initialLayerThickness',name:'First Layer Height (mm) - Thickness of the first layer',value:'.3'},
+{opt:'insetCount',name:'Horizontal Shell Count - Number of perimeters for horizontal layers',value:'4'},
+]},
 
-		// init cura rrwBaseOpts
-		slBaseOpts.rrwBaseOpts['cura'] = [];
+{section:'Fill', options: [
+{opt:'fillDensity',name:'Fill Density (%) - This controls how densely filled the inside of your print will be',value:'20'}, // sets sparseInfillLineDistance needs to set downSkinCount and upSkinCount to 10000 if 100%
+{opt:'upSkinCount',name:'Solid Top Layers - Number of layers on the top of the object which are solid',value:'5'},
+{opt:'downSkinCount',name:'Solid Bottom Layers - Number of layers on the bottom of the object which are solid',value:'5'},
+]},
 
-		// machine settings
-		//console.log(cfdm.machine_settings);
+{section:'Temperature', options: [
+// extruder and bed temp are set in startCode
+{opt:'printTemp',name:'Print Temperature (C) - Temperature used for printing, set at 0 to pre-heat yourself',value:'200'},
+{opt:'bedTemp',name:'Bed Temperature (C) - Bed Temperature used for printing, set at 0 to pre-heat yourself',value:'0'},
+]},
 
-		var cms = {'section':'Machine Settings',options:[]};
+{section:'Printing Speed', options: [
+{opt:'infillSpeed',name:'Infill Speed (mm/s) - Speed at which infill parts are printed',value:'40'},
+{opt:'inset0Speed',name:'Perimeter Speed (mm/s) - Speed at which inner and outer perimeters are printed',value:'30'},
+{opt:'printSpeed',name:'Base Print Speed (mm/s) - Base print speed, this is only used in place of Infill and Perimeter Speed if they are set to 0',value:'30'},
+{opt:'moveSpeed',name:'Travel Speed (mm/s) - Speed at which non printing moves happen',value:'100'},
+{opt:'initialLayerSpeed',name:'First Layer Speed (mm/s) - Speed at which to print the first layer, slower leads to better adhesion',value:'15'},
+]},
 
-		//cms.options.push({opt:'',name:'',value:''});
-		cms.options.push({opt:'machine_width',name:'Width - Build Surface Width',value:'230'});
-		cms.options.push({opt:'machine_height',name:'Height - Build Surface Height',value:'230'});
-		cms.options.push({opt:'machine_heated_bed',name:'Heated Bed',value:['true','false']});
-		cms.options.push({opt:'machine_center_is_zero',name:'Center is Zero',value:['true','false']});
-		cms.options.push({opt:'machine_nozzle_size',name:'Nozzle Size',value:'0.4'});
-		cms.options.push({opt:'machine_start_gcode',name:'Start GCODE - this is prepended to the gcode output',value:'G28 ; Home\nG1 Z15.0 F6000 ;move the platform down 15mm\n;Prime the extruder\nG92 E0\nG1 F200 E3\nG92 E0'});
-		cms.options.push({opt:'machine_end_gcode',name:'End GCODE - this is appended to the gcode output',value:'M104 S0\nM140 S0\n;Retract the filament\nG92 E1\nG1 E-1 F300\nG28 X0 Y0\nM84'});
+{section:'Retraction', options: [
+{opt:'retractionAmount',name:'Retraction Distance (mm) - Amount to retract, set to 0 for no retraction',value:'4.5'},
+{opt:'retractionSpeed',name:'Retraction Speed (mm/s) - Speed at which to retract filament',value:'40'},
+{opt:'retractionZHop',name:'Retraction Z Hop (mm) - Amount to lift Z axis on retract',value:'0'},
+]},
 
-		slBaseOpts.rrwBaseOpts['cura'].push(cms);
+{section:'Filament', options: [
+{opt:'filamentDiameter',name:'Diameter (mm) - Diameter of your filament measured as accurately as possible',value:'3'},
+{opt:'filamentFlow',name:'Flow (%) - Flow compensation, the amount of material extruded is multiplied by this value',value:'100'},
+]},
 
-		for (var key in cfdm.categories) {
-			//console.log('###'+cfdm.categories[key].label+'###');
+{section:'Machine', options: [
+// nozzle size and shell width somehow
+{opt:'posx',name:'Center X (mm) - X Coordinate to center the print around',value:'100'},
+{opt:'posy',name:'Center Y (mm) - Y Coordinate to center the print around',value:'100'},
+{opt:'extrusionWidth',name:'Nozzle Size (mm) - Diameter of nozzle',value:'.4'},
+]},
 
-			// create section object
-			var s = {'section':cfdm.categories[key].label,options:[]};
+{section:'Cool', options: [
+{opt:'minimalLayerTime',name:'Minimal Layer Time (sec) - Printer must spend at least this long per layer to let things cool down',value:'5'},
+]},
 
-			for (var k in cfdm.categories[key].settings) {
-				//console.log(cfdm.categories[key].settings[k].label + ' ' + cfdm.categories[key].settings[k].default + ' - ' + cfdm.categories[key].settings[k].description + "\n");
-				// there are children here
+// these have different values in CuraEngine then a default test with Cura
+//{opt:'fanFullOnLayerNr',name:'fanFullOnLayerNr',value:'1'}, // this is set to 2 in CuraEngine but 1 in Cura
+//{opt:'extruderOffset[1].X',name:'extruderOffset[1].X',value:'0'}, // need to test
+//{opt:'extruderOffset[1].Y',name:'extruderOffset[1].Y',value:'21600'}, // need to test
+//{opt:'fixHorrible',name:'fixHorrible',value:'1'}, // this is set to 0 in CuraEngine
+//{opt:'layer0extrusionWidth',name:'layer0extrusionWidth',value:'500'}, // set to 600 in CuraEngine
+//{opt:'retractionAmountExtruderSwitch',name:'retractionAmountExtruderSwitch',value:'16500'}, // set to 14500 in CuraEngine
+//{opt:'multiVolumeOverlap',name:'multiVolumeOverlap',value:'150'}, // set to 0 in CuraEngine
 
-				// add options to section
-				if (cfdm.categories[key].settings[k].type == 'boolean') {
-					// just true and false
-					if (cfdm.categories[key].settings[k].default == true) {
-						// set true as default
-						s.options.push({opt:k,name:cfdm.categories[key].settings[k].label + ' - ' + cfdm.categories[key].settings[k].description,value:['true','false']});
-					} else {
-						// set false as default
-						s.options.push({opt:k,name:cfdm.categories[key].settings[k].label + ' - ' + cfdm.categories[key].settings[k].description,value:['false','true']});
-					}
-				} else if (cfdm.categories[key].settings[k].type == 'enum') {
-					var te = [];
-					// add default as first enum
-					te.push(cfdm.categories[key].settings[k].default);
-					
-					// loop through enum options, adding all except default as it has already been added
-					for (var ff=0; ff<cfdm.categories[key].settings[k].options.length; ff++) {
-						if (cfdm.categories[key].settings[k].options[ff] != cfdm.categories[key].settings[k].default) {
-							// add it to te
-							te.push(cfdm.categories[key].settings[k].options[ff]);
-						}
-					}
+// these should already be set by CuraEngine
+//{opt:'supportLineDistance',name:'supportLineDistance',value:'3333'}, // set to sparseInfillLineDistance in CuraEngine
+//{opt:'sparseInfillLineDistance',name:'sparseInfillLineDistance',value:'2500'}, // set to 100 * extrusionWidth / 20 in CuraEngine this is the formula for fill density (100*extrusionWidth)/20
 
-					// add it
-					s.options.push({opt:k,name:cfdm.categories[key].settings[k].label + ' - ' + cfdm.categories[key].settings[k].description,value:te});
-				} else {
-					// otherwise it is a number, just add it
-					s.options.push({opt:k,name:cfdm.categories[key].settings[k].label + ' - ' + cfdm.categories[key].settings[k].description,value:cfdm.categories[key].settings[k].default});
-				}
+{section:'Skirt', options: [
+//{opt:'skirtMinLength',name:'skirtMinLength',value:'150000'}, // set to 0 in CuraEngine but shouldn't matter
+{opt:'skirtLineCount',name:'Skirt Line Count - Number of lines to draw for the skirt, set to 0 to not use a skirt.  For a brim set a high Skirt Line Count (20) and a Skirt Distance of 0',value:'1'},
+{opt:'skirtDistance',name:'Skirt Distance (mm) - Distance of skirt from perimeter of printed object',value:'10'},
+]},
 
-			}
+{section:'Support', options: [
+{opt:'supportType',name:'Support Type (FIX) - Type of support structure to build.  Touching Buildplate only creates support where the support structure will touch the build platform, Everywhere creates support even on top parts of the model.',value:['None','Touching Buildplate','Everywhere']},
+{opt:'platformAdhesionType',name:'Platform Adhesion Type - Brim adds a single layer thick flat area around your object which is easily cut off and Raster adds a thick raster below the object and a thin interface between this and your object.',value:['None','Brim','Raft']},
+]},
 
-			// add section
-			slBaseOpts.rrwBaseOpts['cura'].push(s);
+{section:'Start and End Gcode', options: [
+//T0 // no idea why this was in startCode from Cura test
+{opt:'startCode',name:'Start Gcode - Gcode to prepend to file',value:'G21        ;metric values\nG90        ;absolute positioning\nM82        ;set extruder to absolute mode\nM107       ;start with the fan off\nG28 ;move to min endstops\nG1 Z15.0 F9000 ;move the platform down 15mm\nG92 E0                  ;zero the extruded length\nG1 F200 E3              ;extrude 3mm of feed stock\nG92 E0                  ;zero the extruded length again\nG1 F9000\n;Put printing message on LCD screen\nM117 Printing...'},
+{opt:'endCode',name:'End Gcode - Gcode to append to file',value:'M104 S0                     ;extruder heater off\nM140 S0                     ;heated bed heater off (if you have it)\nG91                                    ;relative positioning\nG1 E-1 F300                            ;retract the filament a bit before lifting the nozzle, to release some of the pressure\nG1 Z+0.5 E-5 X-20 Y-20 F9000 ;move Z up a bit and retract filament even more\nG28 ;home\nM84                         ;steppers off\nG90                         ;absolute positioning'},
+]},
 
-		}
+]}
 
-	}
-
-	//console.log(slBaseOpts.rrwBaseOpts['cura']);
-
-});
-
-// export slBaseOpts
 module.exports = slBaseOpts;
+

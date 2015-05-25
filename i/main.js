@@ -120,8 +120,7 @@ $(document).ready(function() {
 				var s = '<p>';
 				if (typeof baseOpts[i].options[c].value == 'object') {
 					// select
-					// first option should always be default
-					s += '<select name="slOptsArray-'+baseOpts[i].options[c].opt+'">';
+					s += '<select name="slOptsArray-'+baseOpts[i].options[c].opt+'"><option></option>';
 					for (var l in baseOpts[i].options[c].value) {
 						s += '<option>'+baseOpts[i].options[c].value[l]+'</option>';
 					}
@@ -278,7 +277,7 @@ $(document).ready(function() {
 
 			// enable Delete Preset
 			$('#deletePreset').removeClass('disabled');
-	
+
 		} else {
 			// disable Delete Preset
 			$('#deletePreset').addClass('disabled');
@@ -330,7 +329,15 @@ $(document).ready(function() {
 			// remove oldest if already at 300 lines
 			$('#console p').first().remove();
 		}
-		$('#console').append('<p>'+data.line+'</p>');
+		var col = 'green';
+		if (data.c == '1') {
+			col = 'red';
+		} else if (data.c == '2') {
+			col = '#555';
+		} else if (data.c == '3') {
+			col = 'black';
+		}
+		$('#console').append('<p class="pf" style="color: '+col+';">'+data.l+'</p>');
 		$('#console').scrollTop($("#console")[0].scrollHeight - $("#console").height());
 	});
 
@@ -341,16 +348,104 @@ $(document).ready(function() {
 
 	$('#processStl').on('click', function() {
 
+		// cura send mm parameters *1000 so .4mm should be 400, 3mm should be 3000
+		// each param here needs to be modified before sending to cura
+		var curaModifiers = {layerThickness:1000,initialLayerThickness:1000,filamentDiameter:1000,posx:1000,posy:1000,extrusionWidth:1000,retractionAmount:1000,skirtDistance:1000,retractionZHop:1000};
+
 		// send vars from slOptsArray
 		var opts = [];
 		jQuery.each($('[name|="slOptsArray"]').serializeArray(), function( c, field ) {
 			field.name = field.name.slice(12);
 			//console.log(field.name, field.value);
+			var skip = 0;
 
-			opts.push({o:field.name, v:field.value});
-			//console.log(field.name+': '+field.value);
+			// cura handles some settings logic in the client
+			if (defaultSlicer == 'cura') {
+				if (field.name == 'bedTemp' || field.name == 'printTemp') {
+					// printTemp and bedTemp are added to startCode and not set directly
+					skip = 1;
+				}
+				if (field.name == 'startCode') {
+					// add bedTemp and printTemp to startCode
+					var prepend = "M140 S" + $('[name="slOptsArray-bedTemp"]').val() + "\nM109 TO S" + $('[name="slOptsArray-printTemp"]').val() + "\n" + "M190 S" + $('[name="slOptsArray-bedTemp"]').val() + "\n";
+					opts.push({o:field.name, v:prepend+field.value});
+					skip = 1;
+				}
+				if (field.name == 'fillDensity') {
+					// set values which account for fill density
+					if (field.value == 0) {
+						opts.push({o:'sparseInfillLineDistance', v:'-1'});
+					} else if (field.value == 100) {
+						opts.push({o:'sparseInfillLineDistance', v:$('[name="slOptsArray-extrusionWidth"]').val()});
+						opts.push({o:'downSkinCount', v:'10000'});
+						opts.push({o:'upSkinCount', v:'10000'});
+					} else {
+						opts.push({o:'sparseInfillLineDistance', v:$('[name="slOptsArray-extrusionWidth"]').val()*100*1000/field.value});
+					}
+					skip = 1;
+				}
+				if (field.name == 'inset0Speed') {
+					// set inner and outer perimter to this value
+					opts.push({o:'inset0Speed', v:field.value});
+					opts.push({o:'insetXSpeed', v:field.value});
+					skip = 1;
+				}
+				if (field.name == 'supportType') {
+					skip = 1;
+				}
+				if (field.name == 'platformAdhesionType') {
+					if (field.value == 'Brim') {
+						// just set skirtDistance to 0 and skirtLineCount to N
+						opts.push({o:'skirtDistance', v:'0'});
+						opts.push({o:'skirtLineCount', v:'10'});
+					} else if (field.value == 'Raft') {
+						opts.push({o:'skirtDistance', v:'0'});
+						opts.push({o:'skirtLineCount', v:'0'});
+						opts.push({o:'raftMargin', v:'5000'});
+						opts.push({o:'raftLineSpacing', v:'3000'});
+						opts.push({o:'raftBaseThickness', v:'300'});
+						opts.push({o:'raftBaseLinewidth', v:'1000'});
+						opts.push({o:'raftInterfaceThickness', v:'270'});
+						opts.push({o:'raftInterfaceLinewidth', v:'400'});
+						opts.push({o:'raftInterfaceLineSpacing', v:'800'});
+						opts.push({o:'raftAirGapLayer0', v:'220'});
+						opts.push({o:'raftBaseSpeed', v:'20'});
+						opts.push({o:'raftFanSpeed', v:'100'});
+						opts.push({o:'raftSurfaceThickness', v:'270'});
+						opts.push({o:'raftSurfaceLinewidth', v:$('[name="slOptsArray-extrusionWidth"]').val()*1000});
+						opts.push({o:'raftSurfaceLineSpacing', v:$('[name="slOptsArray-extrusionWidth"]').val()*1000*.9});
+						opts.push({o:'raftSurfaceLayers', v:'2'});
+						opts.push({o:'raftSurfaceSpeed', v:'20'});
+					}
+					skip = 1;
+				}
 
+			}
+
+			// if we haven't set skip
+			if (skip == 0) {
+				// test if option already exists in opts
+				var alreadySet = 0;
+				for (c in opts) {
+					if (opts[c].o == field.name) {
+						// this option has already been set
+						alreadySet = 1;
+					}
+				}
+				if (alreadySet == 0) {
+					if (defaultSlicer == 'cura' && typeof curaModifiers[field.name] != 'undefined') {
+						// multiply value by modifier
+						opts.push({o:field.name, v:curaModifiers[field.name]*field.value});
+					} else {
+						opts.push({o:field.name, v:field.value});
+					}
+				}
+			}
 		});
+
+		for (c in opts) {
+			//console.log(opts[c].o+': '+opts[c].v);
+		}
 
 		socket.emit('slStart', {slicer:defaultSlicer,opts:opts});
 		$('#sendToPrinter').addClass('disabled');

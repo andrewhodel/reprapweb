@@ -72,3 +72,7 @@
 	width: auto;
 	margin: 10px;
 }
+
+.pf {
+	white-space: pre;
+}

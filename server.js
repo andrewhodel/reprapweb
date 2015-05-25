@@ -147,7 +147,7 @@ function serialData(data, port) {
 		sendFirstQ(port);
 
 		// ok is green
-		emitToPortSockets(port, 'serialRead', {'line':'<span style="color: green;">RESP: '+data+'</span>'});
+		emitToPortSockets(port, 'serialRead', {c:0,l:data});
 
 		// remove first
 		sp[port].lastSerialWrite.shift();
@@ -162,7 +162,7 @@ function serialData(data, port) {
 	} else if (data.indexOf('!!') == 0) {
 
 		// error is red
-		emitToPortSockets(port, 'serialRead', {'line':'<span style="color: red;">RESP: '+data+'</span>'});
+		emitToPortSockets(port, 'serialRead', {c:1,l:data});
 
 		// remove first
 		sp[port].lastSerialWrite.shift();
@@ -171,7 +171,7 @@ function serialData(data, port) {
 
 	} else {
 		// other is grey
-		emitToPortSockets(port, 'serialRead', {'line':'<span style="color: #888;">RESP: '+data+'</span>'});
+		emitToPortSockets(port, 'serialRead', {c:2,l:data});
 	}
 
 	if (sp[port].q.length == 0) {
@@ -209,7 +209,7 @@ function sendFirstQ(port) {
 	//console.log('sending '+t+' ### '+sp[port].q.length+' current q length');
 	// loop through all registered port clients
 	for (var i=0; i<sp[port].sockets.length; i++) {
-		sp[port].sockets[i].emit('serialRead', {'line':'<span style="color: black;">SEND: '+t+'</span>'});
+		sp[port].sockets[i].emit('serialRead', {c:3,l:'SEND: '+t});
 	}
 	sp[port].handle.write(t+"\n");
 	sp[port].lastSerialWrite.push(t);
@@ -220,7 +220,7 @@ io.sockets.on('connection', function (socket) {
 
 	socket.on('firstLoad', function(data) {
 		// emit slic3r saved options to ui
-		socket.emit('slOpts', slBaseOpts.rrwBaseOpts);
+		socket.emit('slOpts', slBaseOpts);
 		socket.emit('config', config);
 	});
 
@@ -342,118 +342,26 @@ io.sockets.on('connection', function (socket) {
 	});
 
 	socket.on('slStart', function (data) {
-
-		// setup slicer options
+		// slicer options
+		// make options string
 		var opts = [];
-
-		if (data.slicer == 'slic3r') {
-			for (c in data.opts) {
-				//console.log(data.opts[c].o, data.opts[c].v);
-				if (data.slicer == 'slic3r' && data.opts[c].v != '') {
-
-					// Slic3r can set the options on the command line
-					opts.push(data.opts[c].o);
-					opts.push(data.opts[c].v);
-
-				}
+		for (c in data.opts) {
+			//console.log(data.opts[c].o, data.opts[c].v);
+			if (data.slicer == 'slic3r' && data.opts[c].v != '') {
+				opts.push(data.opts[c].o);
+				opts.push(data.opts[c].v);
+			} else if (data.slicer == 'cura') {
+				opts.push('-s');
+				opts.push(data.opts[c].o+'='+data.opts[c].v);
 			}
+		}
 
-		} else if (data.slicer == 'cura') {
-
-			// setup command line options
+		if (data.slicer == 'cura') {
 			opts.push('-o');
 			opts.push('workingStl.gcode');
-			opts.push('-j');
-			opts.push('currentCuraConfig.json');
-
-			// CuraEngine has to use an external file
-
-			// we need to sync write to currentCuraConfig.json (sampled from fdmprinter.json which is stored in slBaseOpts.fdmprinter)
-			// then pass that as config to CuraEngine
-			// we are just updating the default fdmprinter.json with the values from the web ui using the reverse of the process that
-			// selects those options for the web ui in slBaseOpts.js
-
-			// first create the json object for the file we will write
-			// we are just copying the base options from fdmprinter.json
-			var curaFdm = JSON.parse(JSON.stringify(slBaseOpts.fdmprinter));
-
-			// this could be simple if there was a standard agreed upon format for options for each slicer
-			// however that would never happen.  we could also just use Cura's standard json format as ours
-			// but that would just result in having to parse things for other slicers.  what would make the most
-			// sense would be for a command line based slicer to use command line based options as it was before this most
-			// recent update to cura.  it seems it would be really simple to just have --optionCategory-optionName value
-			// included in cura by just a loop like this allowing for command line options
-
-			for (var da=0; da<data.opts.length; da++) {
-				// this is a loop for each option sent by the interface
-
-				// if it's string value is true or false, set it to boolean
-				// no strings have a defined value of true or false if they are not boolean in cura
-				if (data.opts[da].v == 'false') {
-					data.opts[da].v = false;
-				} else if (data.opts[da].v == 'true') {
-					data.opts[da].v = true;
-				}
-
-				// first loop through each of machine_settings to find a match
-				for (var daa in curaFdm.machine_settings) {
-					if (daa == data.opts[da].o) {
-						// match, update curaFdm
-						curaFdm.machine_settings[daa]['default'] = data.opts[da].v;
-					}
-				}
-
-				// next loop through each of categories to find a match
-				for (var key in curaFdm.categories) {
-					// and inside each category, loop through the settings
-					//console.log('going through category '+key);
-					for (var k in curaFdm.categories[key].settings) {
-						if (k == data.opts[da].o) {
-							// match
-							//console.log('setting '+key+'.'+k);
-							curaFdm.categories[key].settings[k]['default'] = data.opts[da].v;
-						}
-					}
-				}
-				//console.log('### finished loop for option '+data.opts[da].o+"\n");
-			}
-
-			// this is super strange, but some options don't do anything with cura current
-			// specifically the core defaults such as temperature and machine_start_gcode unless you have
-			// machine_gcode_flavor set to something such as RepRap instead of UltiGCode
-			// https://github.com/Ultimaker/CuraEngine/blob/d44c68a28b5c260ec342bd419ed6164fea8882cf/src/FffGcodeWriter.cpp#L139
-
-			// even if you set machine_gcode_flavor to something other than UltiGCode it still
-			// does not set the print temperature, but it does set the machine_start_gcode
-
-			// we are just going to leave fdmprinter.json settings as default and write the file ourselves
-			// with the start_gcode and bed/extruder warmups
-
-			// material_print_temperature and bed_temperature can be set to whatever, but cura still doesn't
-			// put it at the start of the gcode file to warm up the printer
-			// we need to prepend this to machine_start_gcode
-			curaFdm.machine_settings.machine_start_gcode['default'] = curaFdm.machine_settings.machine_start_gcode['default'] +"\r\nM109 S"+curaFdm.categories['material'].settings.material_print_temperature['default']+"\r\n";
-
-			if (curaFdm.machine_settings.machine_heated_bed['default'] == true) {
-				curaFdm.machine_settings.machine_start_gcode['default'] = curaFdm.machine_settings.machine_start_gcode['default'] +"\r\nM190 S"+curaFdm.categories['material'].settings.material_bed_temperature['default']+"\r\n";
-			}
-
-			//console.log(util.inspect(curaFdm, false, null));
-
-			// now sync write the updated options to a json file for CuraEngine to read
-			fs.writeFileSync('./currentCuraConfig.json', JSON.stringify(curaFdm));
-
 		}
 
-		// add input file, currently the same for both slicers as last option
 		opts.push('workingStl.stl');
-
-		var ls = '';
-		for (var i=0; i<opts.length; i++) {
-			ls += ' '+opts[i];
-		}
-
-		//console.log(data.slicer + ' ' + ls);
 
 		var spawn = require('child_process').spawn;
 
@@ -463,15 +371,18 @@ io.sockets.on('connection', function (socket) {
 			var cmd = spawn('../CuraEngine/build/CuraEngine', opts);
 		}
 
+		//console.log(data);
+		//console.log(opts);
+
 		cmd.stdout.on('data', function (data) {
 			socket.emit('slStatus', 'Slicer status: '+data);
-			socket.emit('serialRead', {'line':'<span style="color: green;">Slicer: '+data+'</span>'});
-			console.log('Slicer stdout: ' + data);
+			socket.emit('serialRead', {c:0,l:'Slicer: '+data});
+			console.log('stdout: ' + data);
 		});
 
 		cmd.stderr.on('data', function (data) {
-			socket.emit('serialRead', {'line':'<span style="color: #888;">Slicer Error: '+data+'</span>'});
-			console.log('Slicer stderr: ' + data);
+			socket.emit('serialRead', {c:2,l:'Slicer Error: '+data});
+			console.log('Slic3r stderr: ' + data);
 		});
 
 		cmd.on('close', function (code) {
@@ -479,23 +390,12 @@ io.sockets.on('connection', function (socket) {
 			// emit file
 			if (code == 0) {
 				// success
-
-				// explained right under this, and earlier in the code
-				if (this[1] == 'cura') {
-					var cefix = fs.readFileSync('./workingStl.gcode');
-
-					cefix = curaFdm.machine_settings.machine_start_gcode['default'] + cefix;
-
-					fs.writeFileSync('./workingStl.gcode',cefix);
-				}
 				socket.emit('slDone', {'status':'success'});
 
 			} else {
-				socket.emit('slDone', {'status':'error'});
+				socket.emit('slDone', {'status':'Slic3r error'});
 			}
-		// here we have to bind curaFdm and the slicer being used so we can update the file with
-		// the proper start and end gcode because curaengine doesn't use what you set in the settings file
-		}.bind([curaFdm,data.slicer]));
+		});
 
 	});
 
