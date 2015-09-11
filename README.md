@@ -60,3 +60,7 @@ http://hostaddress:8000/
 ## CuraEngine and Slic3r
 
 RepRapWeb expects to find ../CuraEngine/build/CuraEngine and ../Slic3r/slic3r.pl (same directory as reprapweb).
+
+## Timelapse
+
+There is a bash script names rrw_timelapse.sh in this repository which you can run on a Linux or BSD machine to generate a timelapse from the built in RRW Webcam server.
