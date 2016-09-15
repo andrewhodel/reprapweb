@@ -27,13 +27,26 @@
 
 $(document).ready(function() {
 
+	// generate random float to act as identifier
+	var sessId = Math.random();
+
 	var socket = io.connect(''); // socket.io init
 	var gCodeToSend = null; // if uploaded file is gcode
 	var localPresets = []; // locally stored presets
 	var defaultSlicer = 'cura';
 	var baseSlOpts;
 
-	socket.emit('firstLoad', 1);
+	socket.on('reconnect', function() {
+		// send the sessId
+		socket.emit('sessId', sessId);
+		setTimeout(function() {$('#connectionIssues').hide();}, 5000);
+	});
+
+	socket.on('disconnect', function() {
+		$("#connectionIssues").show();
+	});
+
+	socket.emit('firstLoad', sessId);
 
 	var canvas = document.getElementById('renderArea');
 	var viewer = new JSC3D.Viewer(canvas);
@@ -74,11 +87,13 @@ $(document).ready(function() {
 	});
 
 	socket.on('serverError', function (data) {
-		alert(data);
+		$('#serverIssues').html('RRW Server: '+data);
+		$('#serverIssues').show();
+		setTimeout(function() {$('#serverIssues').hide();}, 5000);
 	});
 
 	socket.on('ports', function (data) {
-		//console.log('ports event',data);
+		console.log('ports event',data);
 		$('#choosePort').html('<option val="no">Select a serial port</option>');
 		for (var i=0; i<data.length; i++) {
 			$('#choosePort').append('<option value="'+i+'">'+data[i].comName+':'+data[i].pnpId+'</option>');
@@ -93,7 +108,6 @@ $(document).ready(function() {
 	$('#useSlicr').on('click', function() {
 		defaultSlicer = 'slic3r';
 		loadBaseSlOpts();
-		$('#slNameOpts').html('Slic3r Options');
 		$('#useSlicr').addClass('disabled');
 		$('#useCura').removeClass('disabled');
 		loadPresetsForSlicer()
@@ -102,7 +116,6 @@ $(document).ready(function() {
 	$('#useCura').on('click', function() {
 		defaultSlicer = 'cura';
 		loadBaseSlOpts();
-		$('#slNameOpts').html('Cura Options');
 		$('#useCura').addClass('disabled');
 		$('#useSlicr').removeClass('disabled');
 		loadPresetsForSlicer()
@@ -169,7 +182,7 @@ $(document).ready(function() {
 
 			$('#wcImg').attr('src', webroot+':'+data.webcamPort+'/?action=stream');
 
-			$('#wcLink').attr('href', webroot+':'+data.webcamPort+'/javascript_simple.html');
+			$('#wcLink').attr('href', webroot+':'+data.webcamPort+'/?action=stream');
 
 			$('#webcam').show();
 		}
@@ -458,6 +471,7 @@ $(document).ready(function() {
 	$('#choosePort').on('change', function() {
 		// select port
 		socket.emit('usePort', $('#choosePort').val());
+		console.log('choosePort changed');
 	});
 
 	$('#sendCommand').on('click', function() {
@@ -526,6 +540,22 @@ $(document).ready(function() {
 
 	$('#zMTen').on('click', function() {
 		socket.emit('gcodeLine', { line: 'G91\nG1 Z-10\nG90' });
+	});
+
+	$('#buttonSlowSpeed').on('click', function() {
+		socket.emit('gcodeLine', { line: 'G1 F7200' });
+	});
+
+	$('#buttonFastSpeed').on('click', function() {
+		socket.emit('gcodeLine', { line: 'G1 F90000' });
+	});
+
+	$('#m114').on('click', function() {
+		socket.emit('gcodeLine', { line: 'M114' });
+	});
+
+	$('#m119').on('click', function() {
+		socket.emit('gcodeLine', { line: 'M119' });
 	});
 
 	$('#g28').on('click', function() {

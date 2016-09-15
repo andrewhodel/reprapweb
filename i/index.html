@@ -86,6 +86,9 @@
 <option val="no">Select a serial port</option>
 </select>
 
+<div id="connectionIssues" style="display: none; background-color: red; padding: 4px; font-size: 10px;">Connection Issues between your browser and the device running RepRapWeb!!</div>
+<div id="serverIssues" style="display: none; background-color: yellow; padding: 4px; font-size: 10px;"></div>
+
 <br style="clear: both;" />
 
 <span style="margin-right: 10px;" class="btn btn-info btn-file">
@@ -98,6 +101,9 @@ Upload STL <input type="file" id="fileInputStl" />
 
 <p style="margin-top: 4px;" id="fileStatus">File Loaded: </p>
 
+<button type="button" class="btn btn-success disabled" id="processStl" style="float: left;">Process STL -> GCODE</button>
+<br />
+
 <hr style="clear: both;" />
 
 <div class="input-group" style="margin: 10px; margin-top: 0px; width: 80px; float: left;">
@@ -107,23 +113,7 @@ Upload STL <input type="file" id="fileInputStl" />
 </span>
 </div><!-- /input-group -->
 
-<button type="button" class="btn btn-success disabled" id="processStl" style="float: right">Process STL -> GCODE</button>
-
-<br style="clear: both;" />
-
-<img id="slActivity" style="display: none; float: right; margin-top: 8px;" src="activity.gif" />
-
-<p style="margin: 10px; font-size: 12px; color: #999;">Select a slicer to use above, set the options below then Process STL->GCODE.</p>
-
-<h4 id="slNameOpts">Cura Options</h4>
-
-<div id="slOpts">
-
-<div id="slOptsValues"></div>
-
-</div>
-
-<p style="margin: 10px; font-size: 12px; color: #999;">Save the current settings with the name you type in the field, an existing name will overwrite the old preset.</p>
+<p style="display: block; margin: 10px; font-size: 8px; color: #999;">Save the current settings with the name you type in the field, an existing name will overwrite the old preset.</p>
 
 <div class="input-group">
 <input type="text" class="form-control" id="newPresetName">
@@ -142,6 +132,16 @@ Upload STL <input type="file" id="fileInputStl" />
 <button id="deletePreset" class="btn btn-default disabled" type="button">Delete Preset</button>
 </span>
 </div><!-- /input-group -->
+
+<br style="clear: both;" />
+
+<img id="slActivity" style="display: none; float: right; margin-top: 8px;" src="activity.gif" />
+
+<div id="slOpts">
+
+<div id="slOptsValues"></div>
+
+</div>
 
 <hr style="clear: both;" />
 
@@ -194,6 +194,34 @@ Upload STL <input type="file" id="fileInputStl" />
 
 <!-- RIGHT COLUMN -->
 
+<h4>Command Console</h4>
+
+<div id="console"></div>
+
+<div class="input-group">
+<input type="text" class="form-control" id="command">
+<span class="input-group-btn">
+<button id="sendCommand" class="btn btn-default" type="button">
+Send
+</button>
+</span>
+</div><!-- /input-group -->
+
+<div style="clear: both; float: left; margin: 0px; margin-top: 5px;">
+<button type="button" id="g28" class="btn btn-default btn-sm">Home (G28)</button>
+<button type="button" id="g29" class="btn btn-default btn-sm">Autolevel (G29)</button>
+<button type="button" id="pause" class="btn btn-default btn-sm">Pause</button>
+<button type="button" id="clearQ" class="btn btn-default btn-sm disabled">Clear Q</button>
+<br />
+<button type="button" id="m114" class="btn btn-default btn-sm">Current Position (M114)</button>
+<button type="button" id="m119" class="btn btn-default btn-sm">Endstop Status (M119)</button>
+<br />
+<button type="button" id="buttonSlowSpeed" class="btn btn-default btn-sm">120 mm/s</button>
+<button type="button" id="buttonFastSpeed" class="btn btn-default btn-sm">1500 mm/s</button>
+</div>
+
+<hr style="clear: both;" />
+
 <h4>Position Control</h4>
 
 <div style="float: right; margin-left: 10px; margin-top: -15px; margin-bottom: 10px;">
@@ -229,13 +257,6 @@ Upload STL <input type="file" id="fileInputStl" />
 </div>
 </div>
 
-<div style="clear: both; float: right; margin: 20px;">
-<button type="button" id="g28" class="btn btn-default btn-sm">Home</button>
-<button type="button" id="g29" class="btn btn-default btn-sm">Autolevel</button>
-<button type="button" id="pause" class="btn btn-default btn-sm">Pause</button>
-<button type="button" id="clearQ" class="btn btn-default btn-sm disabled">Clear Q</button>
-</div>
-
 <hr style="clear: both;" />
 
 <h4>Extruder & Temp Control</h4>
@@ -250,7 +271,7 @@ Upload STL <input type="file" id="fileInputStl" />
 <br style="clear: both;" />
 
 <div class="input-group" style="margin: 10px; margin-top: 0px; width: 220px; float: right;">
-<input type="text" class="form-control" id="extrudeTemp" value="180" />
+<input type="text" class="form-control" id="extrudeTemp" value="200" />
 <span class="input-group-btn">
 <button type="button" class="btn btn-default" id="extrudeTempSet">Set E0</button>
 <button type="button" class="btn btn-default" id="extrudeTempOff">Off</button>
@@ -265,7 +286,7 @@ Upload STL <input type="file" id="fileInputStl" />
 </div><!-- /input-group -->
 
 <div class="input-group" style="margin: 10px; margin-top: 0px; width: 220px; float: right;">
-<input type="text" class="form-control" id="bedTemp" value="180" />
+<input type="text" class="form-control" id="bedTemp" value="140" />
 <span class="input-group-btn">
 <button type="button" class="btn btn-default" id="bedTempSet">Set Bed</button>
 <button type="button" class="btn btn-default" id="bedTempOff">Off</button>
@@ -276,21 +297,6 @@ Upload STL <input type="file" id="fileInputStl" />
 <span class="input-group-btn">
 <button type="button" class="btn btn-default disabled" id="bTC" style="color: red;">0C</button>
 <button type="button" class="btn btn-default disabled" id="bTS" style="color: green;">0C</button>
-</span>
-</div><!-- /input-group -->
-
-<hr style="clear: both;" />
-
-<h4>Command Console</h4>
-
-<div id="console"></div>
-
-<div class="input-group">
-<input type="text" class="form-control" id="command">
-<span class="input-group-btn">
-<button id="sendCommand" class="btn btn-default" type="button">
-Send
-</button>
 </span>
 </div><!-- /input-group -->
 

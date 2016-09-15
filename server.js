@@ -216,26 +216,66 @@ function sendFirstQ(port) {
 }
 
 var queuePause = 0;
+
+var sessIdToSocketId = [];
+function checkForExistingSess(sessId, socket) {
+
+	console.log('checking for existing session');
+
+	// loop through the sessId's to see if this one already exists
+	for (r in sessIdToSocketId) {
+		if (sessIdToSocketId[r].sessId == sessId) {
+
+			// check if old socket.id has an entry in currentSocketPort
+			if (typeof(currentSocketPort[sessIdToSocketId[r].socketId]) != undefined) {
+				console.log('existing session found using port '+currentSocketPort[sessIdToSocketId[r].socketId]);
+				// the old socket had a serial port, set the new socket.id to use the old serial port
+				currentSocketPort[socket.id] = currentSocketPort[sessIdToSocketId[r].socketId];
+
+				// add the socket to the serial port
+				sp[currentSocketPort[sessIdToSocketId[r].socketId]].sockets.push(socket);
+
+				// update the sessIdToSocketId entry
+				sessIdToSocketId[r].socketId = socket.id;
+			}
+
+		}
+	}
+
+}
+
 io.sockets.on('connection', function (socket) {
 
+	console.log('connection event for socket.id', socket.id);
+
+	socket.on('sessId', function(data) {
+		// this means that the client reconnected
+		// so we need to set the proper socket id for this sessId
+		checkForExistingSess(data, socket);
+	});
+
 	socket.on('firstLoad', function(data) {
+
 		// emit slic3r saved options to ui
 		socket.emit('slOpts', slBaseOpts);
 		socket.emit('config', config);
-	});
 
-	// emit all ports to ui
-	socket.emit('ports', allPorts);
+		// emit all ports to ui
+		socket.emit('ports', allPorts);
 
-	// send presets
-	fs.readFile('presets', function(err, cPresets) {
-		if (err) {
-			console.log('problem reading presets, using none');
-			cPresets = {slic3r:[],cura:[]};
-		} else {
-			cPresets = JSON.parse(cPresets);
-		}
-		socket.emit('presets', {exists:-1,presets:cPresets});
+		// set the sessId alongside this socket id
+		sessIdToSocketId.push({sessId:data, socketId:socket.id});
+
+		// send presets
+		fs.readFile('presets', function(err, cPresets) {
+			if (err) {
+				console.log('problem reading presets, using none');
+				cPresets = {slic3r:[],cura:[]};
+			} else {
+				cPresets = JSON.parse(cPresets);
+			}
+			socket.emit('presets', {exists:-1,presets:cPresets});
+		});
 	});
 
 	socket.on('deletePreset', function(data) {
@@ -510,9 +550,9 @@ io.sockets.on('connection', function (socket) {
 	socket.on('usePort', function (data) {
 
 		console.log('user wants to use port '+data);
-		console.log('switching from '+currentSocketPort[socket.id]);
 
 		if (typeof currentSocketPort[socket.id] != 'undefined') {
+			console.log('currentSocketPort is defined, removing old one');
 			for (var c=0; c<sp[currentSocketPort[socket.id]].sockets.length; c++) {
 				if (sp[currentSocketPort[socket.id]].sockets[c].id == socket.id) {
 					// remove old
