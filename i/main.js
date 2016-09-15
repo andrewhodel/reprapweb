@@ -543,11 +543,11 @@ $(document).ready(function() {
 	});
 
 	$('#buttonSlowSpeed').on('click', function() {
-		socket.emit('gcodeLine', { line: 'G1 F7200' });
+		socket.emit('gcodeLine', { line: 'G1 F120' });
 	});
 
 	$('#buttonFastSpeed').on('click', function() {
-		socket.emit('gcodeLine', { line: 'G1 F90000' });
+		socket.emit('gcodeLine', { line: 'G1 F1500' });
 	});
 
 	$('#m114').on('click', function() {
