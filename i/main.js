@@ -178,11 +178,26 @@ $(document).ready(function() {
 			// show the webcam and link
 			var webroot = window.location.protocol+'//'+window.location.hostname;
 
-			console.log(webroot);
+			//console.log(webroot);
 
 			$('#wcImg').attr('src', webroot+':'+data.webcamPort+'/?action=stream');
 
-			$('#wcLink').attr('href', webroot+':'+data.webcamPort+'/?action=stream');
+			$('#wcImg').click(function(e) {
+				if ($('#wcImg').css('position') == 'fixed') {
+					// move the camera image back to it's original size and position
+					$('#wcImg').css('position', 'block');
+					$('#wcImg').css('top', '0px');
+					$('#wcImg').css('width', '320px');
+					$('#wcImg').css('height', '240px');
+				} else {
+					// enlarge the camera image
+					$('#wcImg').css('position', 'fixed');
+					$('#wcImg').css('top', '80px');
+					$('#wcImg').css('width', '640px');
+					$('#wcImg').css('height', '480px');
+					$('#wcImg').css('z-index', '99');
+				}
+			});
 
 			$('#webcam').show();
 		}
@@ -599,7 +614,7 @@ $(document).ready(function() {
 	});
 
 	$('#extrudeMM').on('click', function() {
-		socket.emit('gcodeLine', { line: 'G91\nG1 F200 E'+$('#extrudeValue').val()+'\nG90' });
+		socket.emit('gcodeLine', { line: 'G91\nG1 F30 E'+$('#extrudeValue').val()+'\nG90' });
 	});
 
 	$('#extrudeTempSet').on('click', function() {
@@ -664,8 +679,18 @@ $(document).ready(function() {
 
 	// temperature
 	socket.on('tempStatus', function(data) {
-		if (data.indexOf('ok') == 0) {
-			// this is a normal temp status
+		if (data.indexOf('E0') == 0) {
+			var t = data.split(',');
+
+			// extruder current and set temp
+			$('#eTC').html(t[1]+'C');
+			$('#eTS').html(t[2]+'C');
+			// bed current and set temp
+			$('#bTC').html(t[4]+'C');
+			$('#bTS').html(t[5].trim()+'C');
+
+		} else if (data.indexOf('ok') == 0) {
+			// this is a normal temp status from Marlin which has been completely fucked up by too many people
 
 			var fs = data.split(/[TB]/);
 			var t = fs[1].split('/');
@@ -678,13 +703,15 @@ $(document).ready(function() {
 			}
 			// t[0] = extruder temp, t[1] = extruder set temp
 			// b[0] = bed temp, b[1] = bed set temp
+
 			$('#eTC').html(t[0]+'C');
 			$('#eTS').html(t[1]+'C');
 			$('#bTC').html(b[0]+'C');
 			$('#bTS').html(b[1]+'C');
 
 		} else {
-			// this is a waiting temp status
+			// this is a waiting temp status, for Marlin which might work or might just get changed
+			// based on something other than simplicity
 			// get extruder temp
 			var eT = data.split('T');
 			eT = eT[1].split('E');

@@ -127,7 +127,14 @@ function serialData(data, port) {
 	// new line of data terminated with \n
 	//console.log('got newline from serial: '+data);
 
-	// handle M105
+	// handle M105 and wait for temp responses for Sprinter-simple-right
+	if (data.indexOf('E0') == 0) {
+		emitToPortSockets(port, 'tempStatus', data);
+		sp[port].lastSerialReadLine = data;
+		return;
+	}
+
+	// handle M105 for typical Marlin/RepRap data
 	if (data.indexOf('ok T:') == 0 || data.indexOf('T:') == 0) {
 		emitToPortSockets(port, 'tempStatus', data);
 		sp[port].lastSerialReadLine = data;
