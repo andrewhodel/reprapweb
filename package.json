@@ -1,9 +1,9 @@
 {
-  "name" : "reprapweb",
-  "description" : "a fully featured web ui for reprap and other 3d printers",
-  "dependencies" :
-  { "node-static" : "0.7.x"
-  , "serialport" : "1.4.x"
-  , "socket.io" : "1.4.x"
+  "name": "reprapweb",
+  "description": "a fully featured web ui for reprap and other 3d printers",
+  "dependencies": {
+    "node-static": "0.7.x",
+    "serialport": "7.0.x",
+    "socket.io": "2.2.x"
   }
 }
