@@ -398,6 +398,14 @@ io.sockets.on('connection', function (socket) {
 		// slicer options
 		// make options string
 		var opts = [];
+
+		if (data.slicer == 'cura') {
+			opts.push('slice');
+		} else if (data.slicer == 'slic3r') {
+		}
+
+		//console.log(opts);
+
 		for (c in data.opts) {
 			//console.log(data.opts[c].o, data.opts[c].v);
 			if (data.slicer == 'slic3r' && data.opts[c].v != '') {
@@ -407,11 +415,13 @@ io.sockets.on('connection', function (socket) {
 				opts.push('-s');
 				opts.push(data.opts[c].o+'='+data.opts[c].v);
 			}
+
 		}
 
 		if (data.slicer == 'cura') {
 			opts.push('-o');
 			opts.push('workingStl.gcode');
+			opts.push('-l');
 		}
 
 		opts.push('workingStl.stl');

@@ -5,4 +5,6 @@ while [ "$1" != "" ]; do
   shift;
 done
 
-LANG=C /root/localperl/bin/perl /root/Slic3r/slic3r.pl $argstring;
+echo $argstring
+
+LANG=C perl /home/pi/Slic3r/slic3r.pl $argstring;
