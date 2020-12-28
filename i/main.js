@@ -96,7 +96,7 @@ $(document).ready(function() {
 		console.log('ports event',data);
 		$('#choosePort').html('<option val="no">Select a serial port</option>');
 		for (var i=0; i<data.length; i++) {
-			$('#choosePort').append('<option value="'+i+'">'+data[i].comName+':'+data[i].pnpId+'</option>');
+			$('#choosePort').append('<option value="'+i+'">'+data[i].path+':'+data[i].pnpId+'</option>');
 		}
 		if (data.length == 1) {
 			// select first and only

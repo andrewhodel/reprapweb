@@ -81,6 +81,8 @@ serialport.list().then(function(ports) {
 
 	allPorts = ports;
 
+	console.log(ports);
+
 	for (var i=0; i<ports.length; i++) {
 	!function outer(i){
 
@@ -90,26 +92,30 @@ serialport.list().then(function(ports) {
 		sp[i].qCurrentMax = 0;
 		sp[i].lastSerialWrite = [];
 		sp[i].lastSerialReadLine = '';
-		sp[i].handle = new SerialPort(ports[i].path, {
-			parser: serialport.parsers.readline("\n"),
-			baudrate: config.serialBaudRate
+		// read on the parser
+		sp[i].handle = new serialport.parsers.Readline({delimiter: '\n'});
+		// 1 means clear to send, 0 means waiting for response
+		sp[i].port = new serialport(ports[i].path, {
+			baudRate: config.serialBaudRate
 		});
+		// write on the port
+		sp[i].port.pipe(sp[i].handle);
 		sp[i].sockets = [];
 
 		sp[i].handle.on("open", function() {
 
 			console.log('connected to '+sp[i].port+' at '+config.serialBaudRate);
 
-			// line from serial port
-			sp[i].handle.on("data", function (data) {
-				serialData(data, i);
-			});
-
 			// loop for temp every 5 seconds
 			setInterval(function() {
 				sp[i].handle.write("M105\n");
 			}, 5000);
 
+		});
+
+		// line from serial port
+		sp[i].handle.on("data", function (data) {
+			serialData(data, i);
 		});
 
 	}(i)
