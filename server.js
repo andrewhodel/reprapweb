@@ -77,7 +77,7 @@ function ConvChar( str ) {
 var sp = [];
 var allPorts = [];
 
-serialport.list(function (err, ports) {
+serialport.list().then(function(ports) {
 
 	allPorts = ports;
 
@@ -85,12 +85,12 @@ serialport.list(function (err, ports) {
 	!function outer(i){
 
 		sp[i] = {};
-		sp[i].port = ports[i].comName;
+		sp[i].port = ports[i].path;
 		sp[i].q = [];
 		sp[i].qCurrentMax = 0;
 		sp[i].lastSerialWrite = [];
 		sp[i].lastSerialReadLine = '';
-		sp[i].handle = new SerialPort(ports[i].comName, {
+		sp[i].handle = new SerialPort(ports[i].path, {
 			parser: serialport.parsers.readline("\n"),
 			baudrate: config.serialBaudRate
 		});
