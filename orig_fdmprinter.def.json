@@ -398,6 +398,58 @@
                     "settable_per_extruder": false,
                     "settable_per_meshgroup": false
                 },
+                "machine_disallowed_areas":
+                {
+                    "label": "Disallowed Areas",
+                    "description": "A list of polygons with areas the print head is not allowed to enter.",
+                    "type": "polygons",
+                    "default_value":
+                    [
+                    ],
+                    "settable_per_mesh": false,
+                    "settable_per_extruder": false,
+                    "settable_per_meshgroup": false
+                },
+                "nozzle_disallowed_areas":
+                {
+                    "label": "Nozzle Disallowed Areas",
+                    "description": "A list of polygons with areas the nozzle is not allowed to enter.",
+                    "type": "polygons",
+                    "default_value":
+                    [
+                    ],
+                    "settable_per_mesh": false,
+                    "settable_per_extruder": false,
+                    "settable_per_meshgroup": false
+                },
+                "machine_head_with_fans_polygon":
+                {
+                    "label": "Machine Head & Fan Polygon",
+                    "description": "A 2D silhouette of the print head (fan caps included).",
+                    "type": "polygon",
+                    "default_value":
+                    [
+                        [
+                            -20,
+                            10
+                        ],
+                        [
+                            10,
+                            10
+                        ],
+                        [
+                            10,
+                            -10
+                        ],
+                        [
+                            -20,
+                            -10
+                        ]
+                    ],
+                    "settable_per_mesh": false,
+                    "settable_per_extruder": false,
+                    "settable_per_meshgroup": false
+                },
                 "gantry_height":
                 {
                     "label": "Gantry Height",

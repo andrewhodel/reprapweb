@@ -14,12 +14,18 @@ M104 S215
 M105
 M109 S215
 M82 ;absolute extrusion mode
-G28 ;Home
-G1 Z15.0 F6000 ;Move the platform down 15mm
-;Prime the extruder
-G92 E0
-G1 F200 E3
-G92 E0
+G21        ;metric values
+G90        ;absolute positioning
+M82        ;set extruder to absolute mode
+M107       ;start with the fan off
+G28 ;move to min endstops
+G1 Z15.0 F9000 ;move the platform down 15mm
+G92 E0                  ;zero the extruded length
+G1 F200 E3              ;extrude 3mm of feed stock
+G92 E0                  ;zero the extruded length again
+G1 F9000
+;Put printing message on LCD screen
+M117 Printing...
 G92 E0
 G92 E0
 G1 F1500 E-6.5
@@ -15284,13 +15290,14 @@ G0 F7200 X50.157 Y50.123
 ;TIME_ELAPSED:450.394538
 G1 F1500 E67.24846
 M107
-M104 S0
-M140 S0
-;Retract the filament
-G92 E1
-G1 E-1 F300
-G28 X0 Y0
-M84
+M104 S0                     ;extruder heater off
+M140 S0                     ;heated bed heater off (if you have it)
+G91                                    ;relative positioning
+G1 E-1 F300                            ;retract the filament a bit before lifting the nozzle, to release some of the pressure
+G1 Z+0.5 E-5 X-20 Y-20 F9000 ;move Z up a bit and retract filament even more
+G28 ;home
+M84                         ;steppers off
+G90                         ;absolute positioning
 M82 ;absolute extrusion mode
 M104 S0
 ;End of Gcode

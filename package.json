@@ -3,7 +3,7 @@
   "description": "a fully featured web ui for reprap and other 3d printers",
   "dependencies": {
     "node-static": "0.7.x",
-    "serialport": "9.0.x",
+    "serialport": "^9.0.6",
     "socket.io": "2.4.x"
   }
 }

@@ -406,6 +406,8 @@ io.sockets.on('connection', function (socket) {
 
 		//console.log(opts);
 
+		// cura needs to load the default options with -j from a json file
+		// options passed after the -j option with -s have priority
 		if (data.slicer == 'cura') {
 			opts.push('-j');
 			opts.push('./fdmprinter.def.json');
@@ -439,23 +441,37 @@ io.sockets.on('connection', function (socket) {
 			var cmd = spawn('../CuraEngine/build/CuraEngine', opts);
 		}
 
-		console.log(data);
-		console.log(opts);
+		//console.log(data);
+		//console.log(opts);
+		
+		var stdout = '';
+		var stderr = '';
 
 		cmd.stdout.on('data', function (data) {
-			socket.emit('slStatus', 'Slicer status: '+data);
-			socket.emit('serialRead', {c:0,l:'Slicer: '+data});
-			console.log('stdout: ' + data);
+			stdout += data;
 		});
 
 		cmd.stderr.on('data', function (data) {
-			socket.emit('serialRead', {c:2,l:'Slicer Error: '+data});
-			console.log('Slic3r stderr: ' + data);
+			stderr += data;
 		});
 
 		cmd.on('close', function (code) {
 			console.log('child process exited with code ' + code);
-			// emit file
+
+			socket.emit('slStatus', 'Slicer status: '+stdout);
+			socket.emit('consoleDisplay', {c:0,l:'Slicer Output (stdout): '+stdout});
+
+			if (this.data.slicer == 'cura' && stderr.indexOf('[WARNING]') > -1) {
+				// cura provides all options via a WARNING sent to stderr
+				// which makes very little sense and should be in stdout
+				socket.emit('consoleDisplay', {c:2,l:'These are the Cura Slicer Options, which CuraEngine sends to stderr: '+stderr});
+			} else {
+				socket.emit('consoleDisplay', {c:2,l:'Slicer Error (stderr): '+stderr});
+			}
+			console.log('stdout: ' + stdout);
+			console.log('stderr: ' + stderr);
+
+			// emit slDone with status
 			if (code == 0) {
 				// success
 				socket.emit('slDone', {'status':'success'});
@@ -463,7 +479,7 @@ io.sockets.on('connection', function (socket) {
 			} else {
 				socket.emit('slDone', {'status':'Slic3r error'});
 			}
-		});
+		}.bind({data: data}));
 
 	});
 

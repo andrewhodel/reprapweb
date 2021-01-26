@@ -352,7 +352,8 @@ $(document).ready(function() {
 		$('#qStatus').css('width',(pct*hWidth/100)+'px');
 	});
 
-	socket.on('serialRead', function (data) {
+	socket.on('consoleDisplay', function (data) {
+		console.log('consoleDisplay', data);
 		if ($('#console p').length > 300) {
 			// remove oldest if already at 300 lines
 			$('#console p').first().remove();
