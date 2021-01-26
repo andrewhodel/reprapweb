@@ -160,7 +160,7 @@ function serialData(data, port) {
 		sendFirstQ(port);
 
 		// ok is green
-		emitToPortSockets(port, 'serialRead', {c:0,l:data});
+		emitToPortSockets(port, 'consoleDisplay', {c:0,l:data});
 
 		// remove first
 		sp[port].lastSerialWrite.shift();
@@ -175,7 +175,7 @@ function serialData(data, port) {
 	} else if (data.indexOf('!!') == 0) {
 
 		// error is red
-		emitToPortSockets(port, 'serialRead', {c:1,l:data});
+		emitToPortSockets(port, 'consoleDisplay', {c:1,l:data});
 
 		// remove first
 		sp[port].lastSerialWrite.shift();
@@ -184,7 +184,7 @@ function serialData(data, port) {
 
 	} else {
 		// other is grey
-		emitToPortSockets(port, 'serialRead', {c:2,l:data});
+		emitToPortSockets(port, 'consoleDisplay', {c:2,l:data});
 	}
 
 	if (sp[port].q.length == 0) {
@@ -222,7 +222,7 @@ function sendFirstQ(port) {
 	//console.log('sending '+t+' ### '+sp[port].q.length+' current q length');
 	// loop through all registered port clients
 	for (var i=0; i<sp[port].sockets.length; i++) {
-		sp[port].sockets[i].emit('serialRead', {c:3,l:'SEND: '+t});
+		sp[port].sockets[i].emit('consoleDisplay', {c:3,l:'SEND: '+t});
 	}
 	sp[port].handle.write(t+"\n");
 	sp[port].lastSerialWrite.push(t);
