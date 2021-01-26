@@ -1,7 +1,7 @@
 /*
 
     RepRapWeb - A Web Based 3d Printer Controller
-    Copyright (C) 2015 Andrew Hodel
+    Copyright (C) 2021 Andrew Hodel
 
     THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
     WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
@@ -406,6 +406,11 @@ io.sockets.on('connection', function (socket) {
 
 		//console.log(opts);
 
+		if (data.slicer == 'cura') {
+			opts.push('-j');
+			opts.push('./fdmprinter.def.json');
+		}
+
 		for (c in data.opts) {
 			//console.log(data.opts[c].o, data.opts[c].v);
 			if (data.slicer == 'slic3r' && data.opts[c].v != '') {
@@ -434,8 +439,8 @@ io.sockets.on('connection', function (socket) {
 			var cmd = spawn('../CuraEngine/build/CuraEngine', opts);
 		}
 
-		//console.log(data);
-		//console.log(opts);
+		console.log(data);
+		console.log(opts);
 
 		cmd.stdout.on('data', function (data) {
 			socket.emit('slStatus', 'Slicer status: '+data);

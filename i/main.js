@@ -1,7 +1,7 @@
 /*
 
     RepRapWeb - A Web Based 3d Printer Controller
-    Copyright (C) 2015 Andrew Hodel
+    Copyright (C) 2021 Andrew Hodel
 
     THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
     WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
