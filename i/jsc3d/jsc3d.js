@@ -3611,8 +3611,11 @@ JSC3D.Scene.prototype.addChild = function(mesh) {
 	Remove a mesh from the scene.
 	@param {JSC3D.Mesh} mesh the mesh to be removed.
  */
-JSC3D.Scene.prototype. = function(mesh) {
-	three_dispose_object_3d(mesh);
+JSC3D.Scene.prototype.removeChild = function(mesh) {
+	var foundAt = this.children.indexOf(mesh);
+	if(foundAt >= 0)
+		three_dispose_object_3d(mesh);
+		this.children.splice(foundAt, 1)
 };
 
 var three_dispose_object_3d = function(object) {
